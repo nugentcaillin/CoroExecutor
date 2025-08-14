@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.15)
 
 set(version "1.0.0")
 
+# defaults
+if (NOT DEFINED BUILD_TESTS)
+    message(STATUS "BUILD_TESTS not set, defaulting to False")
+    set(BUILD_TESTS False)
+else()
+    message(STATUS "BUILD_TESTS set to ${BUILD_TESTS}")
+endif()
+
 project(CoroExecutor
     VERSION ${version}
 )
@@ -27,10 +35,10 @@ if (DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
         STATUS 
         "CMAKE_INSTALL_PREFIX not set\n"
         "default: ${CMAKE_INSTALL_PREFIX}\n"
-        "setting to: ${CMAKE_SOURCE_DIR}/install"
+        "setting to: ${CMAKE_SOURCE_DIR}/build/install"
     )
     set(CMAKE_INSTALL_PREFIX
-        "${CMAKE_SOURCE_DIR}/install"
+        "${CMAKE_SOURCE_DIR}/build/install"
         CACHE PATH "where library is installed" FORCE
     )
 else()
@@ -47,14 +55,6 @@ set(public_headers
 
 include (GNUInstallDirs)
 
-#foreach(header ${public_headers})
-#    file(RELATIVE_PATH header_file_path "${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}" "${header}")
-#    get_filename_component(header_directory_path "${header_file_path}" DIRECTORY)
-#    install(
-#        FILES ${header}
-#        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${header_directory_path}"
-#    )
-#endforeach()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${public_headers}")
 
@@ -90,3 +90,8 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
     DESTINATION cmake
 )
+
+
+if (BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
