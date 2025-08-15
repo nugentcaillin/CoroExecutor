@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.15)
 
 set(version "1.0.0")
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
 # defaults
 if (NOT DEFINED BUILD_TESTS)
     message(STATUS "BUILD_TESTS not set, defaulting to False")
@@ -10,15 +14,18 @@ else()
     message(STATUS "BUILD_TESTS set to ${BUILD_TESTS}")
 endif()
 
+
 project(CoroExecutor
     VERSION ${version}
 )
 
 add_library(${PROJECT_NAME} STATIC)
 
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+
 target_sources(${PROJECT_NAME} 
     PRIVATE
-    src/test.cpp 
+    src/CoroExecutor.cpp 
 )
 
 
@@ -49,7 +56,7 @@ else()
 endif() 
 
 set(public_headers
-    include/CoroExecutor/test.hpp
+    include/CoroExecutor/CoroExecutor.hpp
 )
 
 

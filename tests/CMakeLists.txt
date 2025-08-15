@@ -20,7 +20,10 @@ enable_testing()
 
 add_executable(${PROJECT_NAME})
 
-target_sources(${PROJECT_NAME} PRIVATE tests.cpp)
+target_sources(${PROJECT_NAME} 
+  PRIVATE 
+  LifetimeManagedCoroutine.cpp
+  CoroExecutor.cpp)
 
 
 
