@@ -21,9 +21,11 @@ project(CoroExecutor
 
 add_library(${PROJECT_NAME} STATIC)
 
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+
 target_sources(${PROJECT_NAME} 
     PRIVATE
-    src/test.cpp 
+    src/CoroExecutor.cpp 
 )
 
 
@@ -54,7 +56,6 @@ else()
 endif() 
 
 set(public_headers
-    include/CoroExecutor/test.hpp
     include/CoroExecutor/CoroExecutor.hpp
 )
 
