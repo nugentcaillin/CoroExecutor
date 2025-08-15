@@ -1,3 +1,11 @@
+# About
+This library provides an executor to resume coroutines on its own thread pool.
+
+It also provides a coroutine type that can have its lifetime managed by this executor.
+
+This type only returns void, so it is expected that if a user needs a value from this coroutine
+promises will be used
+
 # Installation
 
 This library can be made available using FetchContent as follows in your CMakeLists.txt
