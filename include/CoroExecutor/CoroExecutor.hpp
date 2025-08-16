@@ -94,11 +94,11 @@ public:
     ~CoroExecutor();
 private:
 
-    void worker_thread_fn();
+    void worker_loop();
 
     std::map<LifetimeManagedCoroutine::promise_type::handle, LifetimeManagedCoroutine> lifetime_coros_;
     std::queue<std::coroutine_handle<>> to_resume;
-    std::queue<LifetimeManagedCoroutine::promise_type::handle> destruction_queue; 
+    std::queue<LifetimeManagedCoroutine::promise_type::handle> to_destroy; 
 
     std::vector<std::thread> worker_threads;
     std::mutex mu;
