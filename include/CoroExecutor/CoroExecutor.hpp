@@ -10,13 +10,38 @@
 #include <mutex>
 #include <condition_variable>
 
+
+class BasicLifetimeManagedCoroutineTest;
+
 namespace CoroExecutor
 {
 
 class CoroExecutor;
 
+
+// behaves as std::suspend_never if no executor, as std::suspend_always if present
+struct final_awaitable {
+    bool await_ready() noexcept;
+
+    // queue up handle for deletion
+    void await_suspend(std::coroutine_handle<>) noexcept;
+    void await_resume() noexcept {};
+    
+    std::shared_ptr<CoroExecutor> executor_;
+    
+    final_awaitable
+    ( std::shared_ptr<CoroExecutor> executor
+    )
+    : executor_(executor)
+    {}
+};
+
+
+
+
 class LifetimeManagedCoroutine
 {
+    friend class ::BasicLifetimeManagedCoroutineTest;
 public:
     struct promise_type 
     {
@@ -27,7 +52,7 @@ public:
         void return_void() {};
 
         // signal to CoroExecutor coroutine is ready for deletion
-        std::suspend_always final_suspend();
+        final_awaitable final_suspend() noexcept;
         
         // assigned by CoroExecutor in add_lifetime_coroutine
         std::shared_ptr<CoroExecutor> executor;
@@ -42,6 +67,10 @@ public:
 
 private:
     promise_type::handle handle_;
+
+    // functions to make unit tests work
+    void resume() { handle_.resume(); }
+    void destroy_self();
 };
 
 
@@ -59,9 +88,11 @@ public:
     // register a created LifetimeManagedCoroutine 
     void add_lifetime_coroutine(LifetimeManagedCoroutine coro);
 
+    // queues registered LifetimeManagedCoroutine for deletion
+    void queue_deletion(LifetimeManagedCoroutine::promise_type::handle handle);
+
     ~CoroExecutor();
 private:
-    void delete_lifetime_coroutine(LifetimeManagedCoroutine::promise_type::handle handle);
     std::map<LifetimeManagedCoroutine::promise_type::handle, LifetimeManagedCoroutine> lifetime_coros_;
     std::queue<std::coroutine_handle<>> to_resume;
     std::queue<LifetimeManagedCoroutine::promise_type::handle> destruction_queue; 
