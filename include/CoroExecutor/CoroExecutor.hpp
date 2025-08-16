@@ -83,7 +83,7 @@ public:
     CoroExecutor(int num_threads);
 
     // queue a coroutine to be resumed on a worker thread
-    void resume_coroutine(std::coroutine_handle<> handle);
+    void queue_resume(std::coroutine_handle<> handle);
 
     // register a created LifetimeManagedCoroutine 
     void add_lifetime_coroutine(LifetimeManagedCoroutine coro);
@@ -93,6 +93,9 @@ public:
 
     ~CoroExecutor();
 private:
+
+    void worker_thread_fn();
+
     std::map<LifetimeManagedCoroutine::promise_type::handle, LifetimeManagedCoroutine> lifetime_coros_;
     std::queue<std::coroutine_handle<>> to_resume;
     std::queue<LifetimeManagedCoroutine::promise_type::handle> destruction_queue; 
