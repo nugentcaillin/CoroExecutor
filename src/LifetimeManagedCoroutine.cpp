@@ -24,15 +24,7 @@ final_awaitable LifetimeManagedCoroutine::promise_type::final_suspend() noexcept
     return final_awaitable(executor);
 }
 
-void LifetimeManagedCoroutine::destroy_self()
-{
-    if (handle_.promise().executor)
-    {
-        // enrol coroutine for destruction
-    } else 
-    {
-        handle_.destroy();
-    }
-}
+
+
 
 } // namespace CoroExecutor

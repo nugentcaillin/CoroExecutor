@@ -65,12 +65,26 @@ public:
     : handle_(handle)
     {}; 
 
+    // Move only
+    LifetimeManagedCoroutine(const LifetimeManagedCoroutine& other) = delete;
+    LifetimeManagedCoroutine& operator=(const LifetimeManagedCoroutine& other) = delete;
+    LifetimeManagedCoroutine(LifetimeManagedCoroutine&& other) = default;
+    LifetimeManagedCoroutine& operator=(LifetimeManagedCoroutine&& other) = delete;
+
+    ~LifetimeManagedCoroutine()
+    {
+        // safety guard - this should never evaluate to true if used properly
+        if (handle_)
+        {
+            handle_.destroy();
+        }
+    }
+
+
+
 private:
     promise_type::handle handle_;
 
-    // functions to make unit tests work
-    void resume() { handle_.resume(); }
-    void destroy_self();
 };
 
 

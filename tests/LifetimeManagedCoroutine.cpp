@@ -12,7 +12,7 @@ TEST_F(CoroExecutorTest, waitsForResume)
 
     EXPECT_EQ(resume_counter, 0);
 
-    destroy_helper(coro);
+    handle_helper(coro).destroy();
 }
 
 
@@ -23,7 +23,7 @@ TEST_F(CoroExecutorTest, executeAfterResume)
     std::thread::id captured_id {};
     auto coro = test_coro(resume_latch, resume_counter, captured_id);
 
-    resume_helper(coro);
+    handle_helper(coro).resume();
     resume_latch.wait();
 
     EXPECT_EQ(resume_counter, 1);

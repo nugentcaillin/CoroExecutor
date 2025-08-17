@@ -87,17 +87,11 @@ public:
 
 
 
-    void resume_helper(CoroExecutor::LifetimeManagedCoroutine& coro)
-    {
-        coro.resume();
-    }
-    void destroy_helper(CoroExecutor::LifetimeManagedCoroutine& coro)
-    {
-        coro.destroy_self();
-    }
     std::coroutine_handle<> handle_helper(CoroExecutor::LifetimeManagedCoroutine& coro) 
     {
-        return coro.handle_;
+        std::coroutine_handle<> handle = coro.handle_;
+        coro.handle_ = nullptr;
+        return handle;
     }
 };
 
