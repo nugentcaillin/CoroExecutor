@@ -25,6 +25,17 @@ void CoroExecutor::queue_deletion(LifetimeManagedCoroutine::promise_type::handle
 
 }
 
+
+void CoroExecutor::add_lifetime_coroutine(LifetimeManagedCoroutine coro)
+{
+    LifetimeManagedCoroutine::promise_type::handle handle = coro.handle_;
+    {
+        std::lock_guard<std::mutex> lk(mu);
+        lifetime_coros_.emplace(handle, std::move(coro));
+    }
+    queue_resume(handle);
+}
+
 CoroExecutor::~CoroExecutor()
 {
     stop_requested = true;

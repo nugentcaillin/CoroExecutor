@@ -42,6 +42,7 @@ struct final_awaitable {
 class LifetimeManagedCoroutine
 {
     friend class ::CoroExecutorTest;
+    friend class CoroExecutor;
 public:
     struct promise_type 
     {
