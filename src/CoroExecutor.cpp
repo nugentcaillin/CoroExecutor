@@ -20,9 +20,13 @@ void CoroExecutor::queue_resume(std::coroutine_handle<> handle)
     cv.notify_one();
 }
 
-void CoroExecutor::queue_deletion(LifetimeManagedCoroutine::promise_type::handle)
+void CoroExecutor::queue_deletion(LifetimeManagedCoroutine::promise_type::handle handle)
 {
-
+    {
+        std::lock_guard<std::mutex> lk(mu);
+        to_destroy.push(handle);
+    }
+    cv.notify_one();
 }
 
 
