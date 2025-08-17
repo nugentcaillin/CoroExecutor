@@ -1,47 +1,31 @@
-#include <gtest/gtest.h>
-#include <CoroExecutor/CoroExecutor.hpp>
+#include "testing.hpp"
 #include <iostream>
+#include <latch>
+#include <atomic>
 
-class BasicLifetimeManagedCoroutineTest : public testing::Test {
-public:
-
-    CoroExecutor::LifetimeManagedCoroutine add_one(int& num)
-    {
-        num++;
-        co_return;
-    }
-    void resume_helper(CoroExecutor::LifetimeManagedCoroutine& coro)
-    {
-        coro.resume();
-    }
-    void destroy_helper(CoroExecutor::LifetimeManagedCoroutine& coro)
-    {
-        coro.destroy_self();
-    }
-};
-
-TEST_F(BasicLifetimeManagedCoroutineTest, waitsForResume)
+TEST_F(CoroExecutorTest, waitsForResume)
 {
-    int foo { 1 };
-    auto coro = add_one(foo);
+    std::latch resume_latch { 1 };
+    std::atomic<int> resume_counter { 0 };
+    std::thread::id captured_id {};
+    auto coro = test_coro(resume_latch, resume_counter, captured_id);
 
-    EXPECT_EQ(foo, 1);
+    EXPECT_EQ(resume_counter, 0);
+
     destroy_helper(coro);
 }
 
 
-TEST_F(BasicLifetimeManagedCoroutineTest, executeAfterResume)
+TEST_F(CoroExecutorTest, executeAfterResume)
 {
-    int foo { 1 };
-    auto coro = add_one(foo);
+    std::latch resume_latch { 1 };
+    std::atomic<int> resume_counter { 0 };
+    std::thread::id captured_id {};
+    auto coro = test_coro(resume_latch, resume_counter, captured_id);
+
     resume_helper(coro);
+    resume_latch.wait();
 
-    EXPECT_EQ(foo, 2);
-}
+    EXPECT_EQ(resume_counter, 1);
 
-
-
-TEST(FooTest, bar)
-{
-    EXPECT_EQ(1, 1);
 }

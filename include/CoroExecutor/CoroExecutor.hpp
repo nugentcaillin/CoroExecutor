@@ -11,7 +11,7 @@
 #include <condition_variable>
 
 
-class BasicLifetimeManagedCoroutineTest;
+class CoroExecutorTest;
 
 namespace CoroExecutor
 {
@@ -41,7 +41,7 @@ struct final_awaitable {
 
 class LifetimeManagedCoroutine
 {
-    friend class ::BasicLifetimeManagedCoroutineTest;
+    friend class ::CoroExecutorTest;
 public:
     struct promise_type 
     {
@@ -76,7 +76,7 @@ private:
 
 
 
-class CoroExecutor
+class CoroExecutor : public std::enable_shared_from_this<CoroExecutor>
 {
 public:
     // create an instance of CoroExecutor with num_threads threads
@@ -94,11 +94,11 @@ public:
     ~CoroExecutor();
 private:
 
-    void worker_thread_fn();
+    void worker_loop();
 
     std::map<LifetimeManagedCoroutine::promise_type::handle, LifetimeManagedCoroutine> lifetime_coros_;
     std::queue<std::coroutine_handle<>> to_resume;
-    std::queue<LifetimeManagedCoroutine::promise_type::handle> destruction_queue; 
+    std::queue<LifetimeManagedCoroutine::promise_type::handle> to_destroy; 
 
     std::vector<std::thread> worker_threads;
     std::mutex mu;
