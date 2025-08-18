@@ -7,6 +7,7 @@
 #include <thread>
 #include <atomic>
 #include <coroutine>
+#include <chrono>
 
 
 class CoroExecutorTest : public testing::Test
@@ -32,15 +33,18 @@ public:
 
     class DestructionTracker {
     public:
-        DestructionTracker(std::atomic<int>& destruction_counter)
+        DestructionTracker(std::atomic<int>& destruction_counter, std::latch& destruction_latch)
         : destruction_counter_(destruction_counter)
+        , destruction_latch_(destruction_latch)
         {}
         ~DestructionTracker()
         {
             destruction_counter_.fetch_add(1);
+            destruction_latch_.count_down();
         }
     private:
         std::atomic<int>& destruction_counter_;
+        std::latch& destruction_latch_;
     };
 
     struct queue_resume
@@ -59,40 +63,66 @@ public:
         std::shared_ptr<CoroExecutor::CoroExecutor> exec_;
     };
 
-    CoroExecutor::LifetimeManagedCoroutine test_coro(std::latch& latch, std::atomic<int>& counter, std::thread::id& id) {
+    struct mock_blocking
+    {
+        bool await_ready() noexcept { return false; }
+        void await_suspend(CoroExecutor::LifetimeManagedCoroutine::promise_type::handle h) noexcept 
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            h.promise().executor->queue_resume(h);
+        }
+        void await_resume() noexcept {}
+
+    };
+
+    CoroExecutor::LifetimeManagedCoroutine test_coro(std::latch& resume_latch, std::atomic<int>& counter, std::thread::id& id) {
         counter.fetch_add(1);
         id = std::this_thread::get_id();
-        latch.count_down();
+        resume_latch.count_down();
         co_return;
     }
 
-    queue_resume_coro queue_resumption_with_awaitable(std::latch& latch, std::atomic<int>& counter, std::thread::id& id, std::shared_ptr<CoroExecutor::CoroExecutor> exec)
+    queue_resume_coro queue_resumption_with_awaitable(std::latch& resume_latch, std::atomic<int>& counter, std::thread::id& id, std::shared_ptr<CoroExecutor::CoroExecutor> exec)
     {
         co_await queue_resume(exec);
-        latch.count_down();
+        resume_latch.count_down();
         counter.fetch_add(1);
         id = std::this_thread::get_id();
         co_return;
     }
 
-    queue_resume_coro count_destruction_with_awaitable(std::latch& latch, std::atomic<int>& destruction_counter, std::shared_ptr<CoroExecutor::CoroExecutor> exec)
+    queue_resume_coro count_destruction_with_awaitable(std::latch& resume_latch, std::latch& destruction_latch, std::atomic<int>& destruction_counter, std::shared_ptr<CoroExecutor::CoroExecutor> exec)
     {
         co_await queue_resume(exec);
-        latch.count_down();
+        resume_latch.count_down();
         
-        DestructionTracker tracker(destruction_counter);
+        DestructionTracker tracker(destruction_counter, destruction_latch);
         
         co_return;
     }
 
-    CoroExecutor::LifetimeManagedCoroutine simple_lifetime_coroutine(std::latch& latch, std::atomic<int>& resume_counter, std::atomic<int>& destruction_counter)
+    CoroExecutor::LifetimeManagedCoroutine simple_lifetime_coroutine(std::latch& resume_latch, std::latch& destruction_latch, std::atomic<int>& resume_counter, std::atomic<int>& destruction_counter)
     {
-        DestructionTracker tracker(destruction_counter);
+        DestructionTracker tracker(destruction_counter, destruction_latch);
         resume_counter.fetch_add(1);
-        latch.count_down();
+        resume_latch.count_down();
         co_return;
     }
 
+    CoroExecutor::LifetimeManagedCoroutine complex_lifetime_coroutine(std::latch& resume_latch, std::latch& destruction_latch, std::atomic<int>& resume_counter, std::atomic<int>& destruction_counter)
+    {
+        DestructionTracker tracker(destruction_counter, destruction_latch);
+        resume_counter.fetch_add(1);
+        
+        co_await mock_blocking();
+        resume_counter.fetch_add(1);
+
+        co_await mock_blocking();
+        resume_counter.fetch_add(1);
+
+        resume_latch.count_down();
+        co_return;
+    }
 
 
     std::coroutine_handle<> handle_helper(CoroExecutor::LifetimeManagedCoroutine& coro) 

@@ -16,7 +16,7 @@ TEST_F(CoroExecutorTest, waitsForResume)
 }
 
 
-TEST_F(CoroExecutorTest, executeAfterResume)
+TEST_F(CoroExecutorTest, executesAfterResume)
 {
     std::latch resume_latch { 1 };
     std::atomic<int> resume_counter { 0 };
