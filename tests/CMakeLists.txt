@@ -23,17 +23,17 @@ add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} 
   PRIVATE
   testing.hpp 
-  LifetimeManagedCoroutine.cpp
-  CoroExecutor.cpp
+  LifetimeManagedCoroutineTest.cpp
+  CoroExecutorTest.cpp
 )
 
-
+target_compile_options(${PROJECT_NAME} PRIVATE -g)
 
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
     CoroExecutor
     GTest::gtest_main 
-    -fsanitize=address
+    #-fsanitize=address
 )
 
 include(GoogleTest)

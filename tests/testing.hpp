@@ -60,9 +60,9 @@ public:
     };
 
     CoroExecutor::LifetimeManagedCoroutine test_coro(std::latch& latch, std::atomic<int>& counter, std::thread::id& id) {
-        latch.count_down();
         counter.fetch_add(1);
         id = std::this_thread::get_id();
+        latch.count_down();
         co_return;
     }
 
@@ -82,6 +82,14 @@ public:
         
         DestructionTracker tracker(destruction_counter);
         
+        co_return;
+    }
+
+    CoroExecutor::LifetimeManagedCoroutine simple_lifetime_coroutine(std::latch& latch, std::atomic<int>& resume_counter, std::atomic<int>& destruction_counter)
+    {
+        DestructionTracker tracker(destruction_counter);
+        resume_counter.fetch_add(1);
+        latch.count_down();
         co_return;
     }
 

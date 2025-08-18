@@ -1,4 +1,5 @@
 #include "CoroExecutor/CoroExecutor.hpp"
+#include <iostream>
 
 namespace CoroExecutor
 {
@@ -32,6 +33,7 @@ void CoroExecutor::queue_deletion(LifetimeManagedCoroutine::promise_type::handle
 
 void CoroExecutor::add_lifetime_coroutine(LifetimeManagedCoroutine coro)
 {
+    coro.handle_.promise().executor = shared_from_this();
     LifetimeManagedCoroutine::promise_type::handle handle = coro.handle_;
     {
         std::lock_guard<std::mutex> lk(mu);
@@ -81,7 +83,7 @@ void CoroExecutor::worker_loop()
         }
         if (destroy_handle)
         {
-            destroy_handle.destroy();
+            lifetime_coros_.erase(destroy_handle);
         }
     }
 }

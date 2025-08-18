@@ -2,7 +2,6 @@
 #include <latch>
 #include <atomic>
 
-
 TEST_F(CoroExecutorTest, singleCoroutineResumed) 
 {
     std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
@@ -137,4 +136,23 @@ TEST_F(CoroExecutorTest, coroExecutorCleansUpMultipleWorkerThreads)
     resume_latch.wait();
 
     EXPECT_EQ(destruction_counter, 20);
+}
+
+// simple coroutine that immediately returns
+TEST_F(CoroExecutorTest, simpleLifetimeCoroutineManagedCorrectly)
+{
+    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
+
+    std::latch resume_latch { 1 };
+    std::atomic<int> resume_counter;
+    std::atomic<int> destruction_counter;
+
+    auto coro = simple_lifetime_coroutine(resume_latch, resume_counter, destruction_counter);
+
+    exec->add_lifetime_coroutine(std::move(coro));
+    resume_latch.wait();
+
+    EXPECT_EQ(resume_counter, 1);
+    EXPECT_EQ(destruction_counter, 1);
+
 }

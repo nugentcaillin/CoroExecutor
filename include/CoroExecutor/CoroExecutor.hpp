@@ -19,23 +19,6 @@ namespace CoroExecutor
 class CoroExecutor;
 
 
-// behaves as std::suspend_never if no executor, as std::suspend_always if present
-struct final_awaitable {
-    bool await_ready() noexcept;
-
-    // queue up handle for deletion
-    void await_suspend(std::coroutine_handle<>) noexcept;
-    void await_resume() noexcept {};
-    
-    std::shared_ptr<CoroExecutor> executor_;
-    
-    final_awaitable
-    ( std::shared_ptr<CoroExecutor> executor
-    )
-    : executor_(executor)
-    {}
-};
-
 
 
 
@@ -44,6 +27,7 @@ class LifetimeManagedCoroutine
     friend class ::CoroExecutorTest;
     friend class CoroExecutor;
 public:
+    struct final_awaitable;
     struct promise_type 
     {
         using handle  = std::coroutine_handle<promise_type>;
@@ -59,6 +43,22 @@ public:
         std::shared_ptr<CoroExecutor> executor;
     };
 
+    // behaves as std::suspend_never if no executor, as std::suspend_always if present
+    struct final_awaitable {
+        bool await_ready() noexcept;
+
+        // queue up handle for deletion
+        void await_suspend(promise_type::handle handle) noexcept;
+        void await_resume() noexcept {};
+    
+        std::shared_ptr<CoroExecutor> executor_;
+    
+        final_awaitable
+        ( std::shared_ptr<CoroExecutor> executor
+        )
+        : executor_(executor)
+        {}
+    };
 
     LifetimeManagedCoroutine
     ( promise_type::handle handle
@@ -69,8 +69,20 @@ public:
     // Move only
     LifetimeManagedCoroutine(const LifetimeManagedCoroutine& other) = delete;
     LifetimeManagedCoroutine& operator=(const LifetimeManagedCoroutine& other) = delete;
-    LifetimeManagedCoroutine(LifetimeManagedCoroutine&& other) = default;
-    LifetimeManagedCoroutine& operator=(LifetimeManagedCoroutine&& other) = delete;
+    LifetimeManagedCoroutine(LifetimeManagedCoroutine&& other)
+    : handle_(other.handle_)
+    {
+        other.handle_ = nullptr;
+    }
+    LifetimeManagedCoroutine& operator=(LifetimeManagedCoroutine&& other)
+    {
+        if (this == &other) return *this;
+        if (handle_) handle_.destroy();
+        handle_ = other.handle_;
+        other.handle_ = nullptr;
+
+        return *this;
+    }
 
     ~LifetimeManagedCoroutine()
     {
