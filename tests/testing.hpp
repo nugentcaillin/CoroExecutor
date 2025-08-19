@@ -8,6 +8,7 @@
 #include <atomic>
 #include <coroutine>
 #include <chrono>
+#include <future>
 
 
 class CoroExecutorTest : public testing::Test
@@ -75,6 +76,20 @@ public:
 
     };
 
+    struct mock_blocking_with_int_promise
+    {
+        bool await_ready() noexcept { return false; }
+        void await_suspend(CoroExecutor::LifetimeManagedCoroutine::promise_type::handle h) noexcept 
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            h.promise().executor->queue_resume(h);
+        }
+        void await_resume() noexcept {}
+
+        std::promise<int> prom;
+
+    };
+
     CoroExecutor::LifetimeManagedCoroutine test_coro(std::latch& resume_latch, std::atomic<int>& counter, std::thread::id& id) {
         counter.fetch_add(1);
         id = std::this_thread::get_id();
@@ -124,6 +139,17 @@ public:
         co_return;
     }
 
+    CoroExecutor::LifetimeManagedCoroutine coroutine_with_promise(std::promise<int> prom, int val)
+    {
+        prom.set_value(val);
+        co_return;
+    }
+
+    CoroExecutor::LifetimeManagedCoroutine coroutine_that_doesnt_complete()
+    {
+        co_await std::suspend_always();
+        co_return;
+    }
 
     std::coroutine_handle<> handle_helper(CoroExecutor::LifetimeManagedCoroutine& coro) 
     {

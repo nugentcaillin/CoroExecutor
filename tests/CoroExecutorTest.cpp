@@ -187,11 +187,23 @@ TEST_F(CoroExecutorTest, complexLifetimeCoroutineManagedCorrectly)
 // coroutine using a promise to return a value
 TEST_F(CoroExecutorTest, LifetimeCoroutineReturningValueManagedCorrectly)
 {
+    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
+    std::promise<int> prom;
+    std::future<int> fut = prom.get_future();
 
+    auto coro = coroutine_with_promise(std::move(prom), 12);
+    exec->add_lifetime_coroutine(std::move(coro));
+
+    fut.wait();
+
+    EXPECT_EQ(fut.get(), 12);
 }
 
 // destructor of CoroExecutor safely destroys remaining LifetimeManagedCoroutines
 TEST_F(CoroExecutorTest, CoroExecutorDestructorDestroysLifetimeManagedCoroutines)
 {
+    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
+    auto coro = coroutine_that_doesnt_complete();
+    exec->add_lifetime_coroutine(std::move(coro));
 
 }

@@ -33,7 +33,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE 
     CoroExecutor
     GTest::gtest_main 
-    #-fsanitize=address
+    -fsanitize=address
 )
 
 include(GoogleTest)
