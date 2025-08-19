@@ -100,8 +100,9 @@ install(FILES
 )
 
 
+#target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
 
 if (BUILD_TESTS)
-    target_compile_options(${PROJECT_NAME} PRIVATE -g)
+    #target_compile_options(${PROJECT_NAME} PRIVATE -g)
     add_subdirectory(tests)
 endif()

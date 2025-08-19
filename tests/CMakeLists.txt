@@ -27,13 +27,11 @@ target_sources(${PROJECT_NAME}
   CoroExecutorTest.cpp
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE -g)
 
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
     CoroExecutor
     GTest::gtest_main 
-    -fsanitize=address
 )
 
 include(GoogleTest)

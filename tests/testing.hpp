@@ -89,10 +89,10 @@ public:
         std::promise<int> prom;
 
     };
-
     CoroExecutor::LifetimeManagedCoroutine test_coro(std::latch& resume_latch, std::atomic<int>& counter, std::thread::id& id) {
-        counter.fetch_add(1);
+        std::cout << "resumed\n";
         id = std::this_thread::get_id();
+        counter.fetch_add(1);
         resume_latch.count_down();
         co_return;
     }
@@ -100,9 +100,9 @@ public:
     queue_resume_coro queue_resumption_with_awaitable(std::latch& resume_latch, std::atomic<int>& counter, std::thread::id& id, std::shared_ptr<CoroExecutor::CoroExecutor> exec)
     {
         co_await queue_resume(exec);
-        resume_latch.count_down();
-        counter.fetch_add(1);
         id = std::this_thread::get_id();
+        counter.fetch_add(1);
+        resume_latch.count_down();
         co_return;
     }
 
@@ -138,6 +138,7 @@ public:
         resume_latch.count_down();
         co_return;
     }
+
     CoroExecutor::LifetimeManagedCoroutine coroutine_with_promise(std::promise<int> prom, int val)
     {
         prom.set_value(val);

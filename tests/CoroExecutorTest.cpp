@@ -6,26 +6,29 @@
 
 TEST_F(CoroExecutorTest, singleCoroutineResumed) 
 {
+    std::cout << "start\n";
     std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
 
 
     std::latch resume_latch { 1 };
     std::atomic<int> resume_counter { 0 };
     std::thread::id captured_id {};
+    std::cout << "locals\n";
     auto coro = test_coro(resume_latch, resume_counter, captured_id);
+    std::cout << "coro\n";
 
     auto handle = handle_helper(coro);
-
+    std::cout << "handle\n";
     exec->queue_resume(handle);
-
+    std::cout << "resumed\n";
     resume_latch.wait();
+    std::cout << "coro finished\n";
 
     EXPECT_EQ(resume_counter, 1);
 
     handle.destroy();
 
 }
-
 
 TEST_F(CoroExecutorTest, multipleCoroutinesResumed) 
 {
@@ -41,6 +44,7 @@ TEST_F(CoroExecutorTest, multipleCoroutinesResumed)
     {
         auto coro = test_coro(resume_latch, resume_counter, captured_id);
         auto handle = handle_helper(coro);
+        std::cout << "queueing coro\n"; 
         exec->queue_resume(handle);
         handles.push_back(handle);
     }
@@ -53,7 +57,6 @@ TEST_F(CoroExecutorTest, multipleCoroutinesResumed)
         handles[i].destroy();
     }
 }
-
 
 TEST_F(CoroExecutorTest, multipleCoroutinesResumedWithMultipleThreads) 
 {
