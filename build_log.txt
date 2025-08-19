@@ -1,0 +1,373 @@
+[Run Tests/build] ⭐ Run Set up job
+[Run Tests/build] 🚀  Start image=catthehacker/ubuntu:full-latest
+[Run Tests/build]   🐳  docker pull image=catthehacker/ubuntu:full-latest platform= username= forcePull=true
+[Run Tests/build]   🐳  docker create image=catthehacker/ubuntu:full-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Run Tests/build]   🐳  docker run image=catthehacker/ubuntu:full-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Run Tests/build]   🐳  docker exec cmd=[chown -R 1001:128 /home/caillin/Documents/repos/CoroExecutor] user=0 workdir=
+[Run Tests/build]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Run Tests/build]   ✅  Success - Set up job
+[Run Tests/build]   ☁  git clone 'https://github.com/actions/upload-artifact' # ref=v4
+[Run Tests/build] ⭐ Run Main actions/checkout@v4
+[Run Tests/build]   🐳  docker cp src=/home/caillin/Documents/repos/CoroExecutor/. dst=/home/caillin/Documents/repos/CoroExecutor
+[Run Tests/build]   🐳  docker exec cmd=[chown -R 1001:128 /home/caillin/Documents/repos/CoroExecutor] user=0 workdir=
+[Run Tests/build]   ✅  Success - Main actions/checkout@v4 [52.850582ms]
+[Run Tests/build] ⭐ Run Main Configure CMake
+[Run Tests/build]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/1] user= workdir=
+[Run Tests/build]   | -- BUILD_TESTS set to True
+[Run Tests/build]   | -- The C compiler identification is GNU 11.4.0
+[Run Tests/build]   | -- The CXX compiler identification is GNU 11.4.0
+[Run Tests/build]   | -- Detecting C compiler ABI info
+[Run Tests/build]   | -- Detecting C compiler ABI info - done
+[Run Tests/build]   | -- Check for working C compiler: /usr/bin/cc - skipped
+[Run Tests/build]   | -- Detecting C compile features
+[Run Tests/build]   | -- Detecting C compile features - done
+[Run Tests/build]   | -- Detecting CXX compiler ABI info
+[Run Tests/build]   | -- Detecting CXX compiler ABI info - done
+[Run Tests/build]   | -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[Run Tests/build]   | -- Detecting CXX compile features
+[Run Tests/build]   | -- Detecting CXX compile features - done
+[Run Tests/build]   | -- CMAKE_INSTALL_PREFIX not set
+[Run Tests/build]   | default: /usr/local
+[Run Tests/build]   | setting to: /home/caillin/Documents/repos/CoroExecutor/build/install
+[Run Tests/build]   | -- Found Python: /usr/bin/python3.10 (found version "3.10.12") found components: Interpreter
+[Run Tests/build]   | -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[Run Tests/build]   | -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[Run Tests/build]   | -- Found Threads: TRUE
+[Run Tests/build]   | -- Configuring done (1.7s)
+[Run Tests/build]   | -- Generating done (0.0s)
+[Run Tests/build]   | -- Build files have been written to: /home/caillin/Documents/repos/CoroExecutor/build
+[Run Tests/build]   ✅  Success - Main Configure CMake [1.763509393s]
+[Run Tests/build] ⭐ Run Main Build
+[Run Tests/build]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[Run Tests/build]   | [  7%] Building CXX object CMakeFiles/CoroExecutor.dir/src/CoroExecutor.cpp.o
+[Run Tests/build]   | [ 14%] Building CXX object CMakeFiles/CoroExecutor.dir/src/LifetimeManagedCoroutine.cpp.o
+[Run Tests/build]   | [ 21%] Linking CXX static library libCoroExecutor.a
+[Run Tests/build]   | [ 21%] Built target CoroExecutor
+[Run Tests/build]   | [ 28%] Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o
+[Run Tests/build]   | [ 35%] Linking CXX static library ../../../lib/libgtest.a
+[Run Tests/build]   | [ 35%] Built target gtest
+[Run Tests/build]   | [ 42%] Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o
+[Run Tests/build]   | [ 50%] Linking CXX static library ../../../lib/libgtest_main.a
+[Run Tests/build]   | [ 50%] Built target gtest_main
+[Run Tests/build]   | [ 57%] Building CXX object tests/CMakeFiles/tests.dir/LifetimeManagedCoroutineTest.cpp.o
+[Run Tests/build]   | [ 64%] Building CXX object tests/CMakeFiles/tests.dir/CoroExecutorTest.cpp.o
+[Run Tests/build]   | [ 71%] Linking CXX executable tests
+[Run Tests/build]   | [ 71%] Built target tests
+[Run Tests/build]   | [ 78%] Building CXX object _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.o
+[Run Tests/build]   | [ 85%] Linking CXX static library ../../../lib/libgmock.a
+[Run Tests/build]   | [ 85%] Built target gmock
+[Run Tests/build]   | [ 92%] Building CXX object _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.o
+[Run Tests/build]   | [100%] Linking CXX static library ../../../lib/libgmock_main.a
+[Run Tests/build]   | [100%] Built target gmock_main
+[Run Tests/build]   ✅  Success - Main Build [12.001118095s]
+[Run Tests/build] ⭐ Run Main Test
+[Run Tests/build]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/3] user= workdir=
+[Run Tests/build]   | Internal ctest changing into directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | UpdateCTestConfiguration  from :/home/caillin/Documents/repos/CoroExecutor/build/tests/DartConfiguration.tcl
+[Run Tests/build]   | UpdateCTestConfiguration  from :/home/caillin/Documents/repos/CoroExecutor/build/tests/DartConfiguration.tcl
+[Run Tests/build]   | Test project /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | Constructing a list of tests
+[Run Tests/build]   | Done constructing a list of tests
+[Run Tests/build]   | Updating test list for fixtures
+[Run Tests/build]   | Added 0 tests to meet fixture requirements
+[Run Tests/build]   | Checking test dependency graph...
+[Run Tests/build]   | Checking test dependency graph end
+[Run Tests/build]   | test 1
+[Run Tests/build]   |       Start  1: CoroExecutorTest.waitsForResume
+[Run Tests/build]   | 
+[Run Tests/build]   | 1: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.waitsForResume" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 1: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 1: Test timeout computed to be: 10000000
+[Run Tests/build]   | 1: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 1: Note: Google Test filter = CoroExecutorTest.waitsForResume
+[Run Tests/build]   | 1: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 1: [----------] Global test environment set-up.
+[Run Tests/build]   | 1: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 1: [ RUN      ] CoroExecutorTest.waitsForResume
+[Run Tests/build]   | 1: begin
+[Run Tests/build]   | 1: locals done
+[Run Tests/build]   | 1: coro created
+[Run Tests/build]   | 1: [       OK ] CoroExecutorTest.waitsForResume (0 ms)
+[Run Tests/build]   | 1: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 1: 
+[Run Tests/build]   | 1: [----------] Global test environment tear-down
+[Run Tests/build]   | 1: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 1: [  PASSED  ] 1 test.
+[Run Tests/build]   |  1/14 Test  #1: CoroExecutorTest.waitsForResume ............................................   Passed    0.00 sec
+[Run Tests/build]   | test 2
+[Run Tests/build]   |       Start  2: CoroExecutorTest.executesAfterResume
+[Run Tests/build]   | 
+[Run Tests/build]   | 2: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.executesAfterResume" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 2: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 2: Test timeout computed to be: 10000000
+[Run Tests/build]   | 2: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 2: Note: Google Test filter = CoroExecutorTest.executesAfterResume
+[Run Tests/build]   | 2: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 2: [----------] Global test environment set-up.
+[Run Tests/build]   | 2: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 2: [ RUN      ] CoroExecutorTest.executesAfterResume
+[Run Tests/build]   | 2: begin
+[Run Tests/build]   | 2: locals done
+[Run Tests/build]   | 2: coro created
+[Run Tests/build]   | 2: handle obtained
+[Run Tests/build]   | 2: handle finished resuming
+[Run Tests/build]   | 2: latch done
+[Run Tests/build]   | 2: [       OK ] CoroExecutorTest.executesAfterResume (0 ms)
+[Run Tests/build]   | 2: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 2: 
+[Run Tests/build]   | 2: [----------] Global test environment tear-down
+[Run Tests/build]   | 2: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 2: [  PASSED  ] 1 test.
+[Run Tests/build]   |  2/14 Test  #2: CoroExecutorTest.executesAfterResume .......................................   Passed    0.00 sec
+[Run Tests/build]   | test 3
+[Run Tests/build]   |       Start  3: CoroExecutorTest.singleCoroutineResumed
+[Run Tests/build]   | 
+[Run Tests/build]   | 3: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.singleCoroutineResumed" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 3: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 3: Test timeout computed to be: 10000000
+[Run Tests/build]   | 3: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 3: Note: Google Test filter = CoroExecutorTest.singleCoroutineResumed
+[Run Tests/build]   | 3: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 3: [----------] Global test environment set-up.
+[Run Tests/build]   | 3: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 3: [ RUN      ] CoroExecutorTest.singleCoroutineResumed
+[Run Tests/build]   | 3: start
+[Run Tests/build]   | 3: locals
+[Run Tests/build]   | 3: coro
+[Run Tests/build]   | 3: handle
+[Run Tests/build]   | 3: resumed
+[Run Tests/build]   | 3: coro finished
+[Run Tests/build]   | 3: [       OK ] CoroExecutorTest.singleCoroutineResumed (0 ms)
+[Run Tests/build]   | 3: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 3: 
+[Run Tests/build]   | 3: [----------] Global test environment tear-down
+[Run Tests/build]   | 3: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 3: [  PASSED  ] 1 test.
+[Run Tests/build]   |  3/14 Test  #3: CoroExecutorTest.singleCoroutineResumed ....................................   Passed    0.00 sec
+[Run Tests/build]   | test 4
+[Run Tests/build]   |       Start  4: CoroExecutorTest.multipleCoroutinesResumed
+[Run Tests/build]   | 
+[Run Tests/build]   | 4: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.multipleCoroutinesResumed" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 4: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 4: Test timeout computed to be: 10000000
+[Run Tests/build]   | 4: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 4: Note: Google Test filter = CoroExecutorTest.multipleCoroutinesResumed
+[Run Tests/build]   | 4: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 4: [----------] Global test environment set-up.
+[Run Tests/build]   | 4: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 4: [ RUN      ] CoroExecutorTest.multipleCoroutinesResumed
+[Run Tests/build]   | 4: [       OK ] CoroExecutorTest.multipleCoroutinesResumed (0 ms)
+[Run Tests/build]   | 4: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 4: 
+[Run Tests/build]   | 4: [----------] Global test environment tear-down
+[Run Tests/build]   | 4: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 4: [  PASSED  ] 1 test.
+[Run Tests/build]   |  4/14 Test  #4: CoroExecutorTest.multipleCoroutinesResumed .................................   Passed    0.00 sec
+[Run Tests/build]   | test 5
+[Run Tests/build]   |       Start  5: CoroExecutorTest.multipleCoroutinesResumedWithMultipleThreads
+[Run Tests/build]   | 
+[Run Tests/build]   | 5: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.multipleCoroutinesResumedWithMultipleThreads" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 5: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 5: Test timeout computed to be: 10000000
+[Run Tests/build]   | 5: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 5: Note: Google Test filter = CoroExecutorTest.multipleCoroutinesResumedWithMultipleThreads
+[Run Tests/build]   | 5: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 5: [----------] Global test environment set-up.
+[Run Tests/build]   | 5: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 5: [ RUN      ] CoroExecutorTest.multipleCoroutinesResumedWithMultipleThreads
+[Run Tests/build]   | 5: [       OK ] CoroExecutorTest.multipleCoroutinesResumedWithMultipleThreads (0 ms)
+[Run Tests/build]   | 5: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 5: 
+[Run Tests/build]   | 5: [----------] Global test environment tear-down
+[Run Tests/build]   | 5: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 5: [  PASSED  ] 1 test.
+[Run Tests/build]   |  5/14 Test  #5: CoroExecutorTest.multipleCoroutinesResumedWithMultipleThreads ..............   Passed    0.00 sec
+[Run Tests/build]   | test 6
+[Run Tests/build]   |       Start  6: CoroExecutorTest.coroutineResumedThroughAwaitableResumed
+[Run Tests/build]   | 
+[Run Tests/build]   | 6: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.coroutineResumedThroughAwaitableResumed" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 6: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 6: Test timeout computed to be: 10000000
+[Run Tests/build]   | 6: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 6: Note: Google Test filter = CoroExecutorTest.coroutineResumedThroughAwaitableResumed
+[Run Tests/build]   | 6: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 6: [----------] Global test environment set-up.
+[Run Tests/build]   | 6: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 6: [ RUN      ] CoroExecutorTest.coroutineResumedThroughAwaitableResumed
+[Run Tests/build]   | 6: [       OK ] CoroExecutorTest.coroutineResumedThroughAwaitableResumed (0 ms)
+[Run Tests/build]   | 6: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 6: 
+[Run Tests/build]   | 6: [----------] Global test environment tear-down
+[Run Tests/build]   | 6: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 6: [  PASSED  ] 1 test.
+[Run Tests/build]   |  6/14 Test  #6: CoroExecutorTest.coroutineResumedThroughAwaitableResumed ...................   Passed    0.00 sec
+[Run Tests/build]   | test 7
+[Run Tests/build]   |       Start  7: CoroExecutorTest.coroutineResumedOnSeparateThreads
+[Run Tests/build]   | 
+[Run Tests/build]   | 7: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.coroutineResumedOnSeparateThreads" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 7: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 7: Test timeout computed to be: 10000000
+[Run Tests/build]   | 7: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 7: Note: Google Test filter = CoroExecutorTest.coroutineResumedOnSeparateThreads
+[Run Tests/build]   | 7: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 7: [----------] Global test environment set-up.
+[Run Tests/build]   | 7: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 7: [ RUN      ] CoroExecutorTest.coroutineResumedOnSeparateThreads
+[Run Tests/build]   | 7: [       OK ] CoroExecutorTest.coroutineResumedOnSeparateThreads (0 ms)
+[Run Tests/build]   | 7: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 7: 
+[Run Tests/build]   | 7: [----------] Global test environment tear-down
+[Run Tests/build]   | 7: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 7: [  PASSED  ] 1 test.
+[Run Tests/build]   |  7/14 Test  #7: CoroExecutorTest.coroutineResumedOnSeparateThreads .........................   Passed    0.00 sec
+[Run Tests/build]   | test 8
+[Run Tests/build]   |       Start  8: CoroExecutorTest.coroutineResumedWithAwaitableResumedOnSeparateThreads
+[Run Tests/build]   | 
+[Run Tests/build]   | 8: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.coroutineResumedWithAwaitableResumedOnSeparateThreads" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 8: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 8: Test timeout computed to be: 10000000
+[Run Tests/build]   | 8: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 8: Note: Google Test filter = CoroExecutorTest.coroutineResumedWithAwaitableResumedOnSeparateThreads
+[Run Tests/build]   | 8: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 8: [----------] Global test environment set-up.
+[Run Tests/build]   | 8: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 8: [ RUN      ] CoroExecutorTest.coroutineResumedWithAwaitableResumedOnSeparateThreads
+[Run Tests/build]   | 8: [       OK ] CoroExecutorTest.coroutineResumedWithAwaitableResumedOnSeparateThreads (0 ms)
+[Run Tests/build]   | 8: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 8: 
+[Run Tests/build]   | 8: [----------] Global test environment tear-down
+[Run Tests/build]   | 8: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 8: [  PASSED  ] 1 test.
+[Run Tests/build]   |  8/14 Test  #8: CoroExecutorTest.coroutineResumedWithAwaitableResumedOnSeparateThreads .....   Passed    0.00 sec
+[Run Tests/build]   | test 9
+[Run Tests/build]   |       Start  9: CoroExecutorTest.coroExecutorCleansUpSingleWorkerThread
+[Run Tests/build]   | 
+[Run Tests/build]   | 9: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.coroExecutorCleansUpSingleWorkerThread" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 9: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 9: Test timeout computed to be: 10000000
+[Run Tests/build]   | 9: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 9: Note: Google Test filter = CoroExecutorTest.coroExecutorCleansUpSingleWorkerThread
+[Run Tests/build]   | 9: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 9: [----------] Global test environment set-up.
+[Run Tests/build]   | 9: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 9: [ RUN      ] CoroExecutorTest.coroExecutorCleansUpSingleWorkerThread
+[Run Tests/build]   | 9: [       OK ] CoroExecutorTest.coroExecutorCleansUpSingleWorkerThread (0 ms)
+[Run Tests/build]   | 9: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 9: 
+[Run Tests/build]   | 9: [----------] Global test environment tear-down
+[Run Tests/build]   | 9: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 9: [  PASSED  ] 1 test.
+[Run Tests/build]   |  9/14 Test  #9: CoroExecutorTest.coroExecutorCleansUpSingleWorkerThread ....................   Passed    0.00 sec
+[Run Tests/build]   | test 10
+[Run Tests/build]   |       Start 10: CoroExecutorTest.coroExecutorCleansUpMultipleWorkerThreads
+[Run Tests/build]   | 
+[Run Tests/build]   | 10: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.coroExecutorCleansUpMultipleWorkerThreads" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 10: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 10: Test timeout computed to be: 10000000
+[Run Tests/build]   | 10: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 10: Note: Google Test filter = CoroExecutorTest.coroExecutorCleansUpMultipleWorkerThreads
+[Run Tests/build]   | 10: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 10: [----------] Global test environment set-up.
+[Run Tests/build]   | 10: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 10: [ RUN      ] CoroExecutorTest.coroExecutorCleansUpMultipleWorkerThreads
+[Run Tests/build]   | 10: [       OK ] CoroExecutorTest.coroExecutorCleansUpMultipleWorkerThreads (0 ms)
+[Run Tests/build]   | 10: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 10: 
+[Run Tests/build]   | 10: [----------] Global test environment tear-down
+[Run Tests/build]   | 10: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 10: [  PASSED  ] 1 test.
+[Run Tests/build]   | 10/14 Test #10: CoroExecutorTest.coroExecutorCleansUpMultipleWorkerThreads .................   Passed    0.00 sec
+[Run Tests/build]   | test 11
+[Run Tests/build]   |       Start 11: CoroExecutorTest.simpleLifetimeCoroutineManagedCorrectly
+[Run Tests/build]   | 
+[Run Tests/build]   | 11: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.simpleLifetimeCoroutineManagedCorrectly" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 11: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 11: Test timeout computed to be: 10000000
+[Run Tests/build]   | 11: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 11: Note: Google Test filter = CoroExecutorTest.simpleLifetimeCoroutineManagedCorrectly
+[Run Tests/build]   | 11: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 11: [----------] Global test environment set-up.
+[Run Tests/build]   | 11: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 11: [ RUN      ] CoroExecutorTest.simpleLifetimeCoroutineManagedCorrectly
+[Run Tests/build]   | 11: [       OK ] CoroExecutorTest.simpleLifetimeCoroutineManagedCorrectly (0 ms)
+[Run Tests/build]   | 11: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 11: 
+[Run Tests/build]   | 11: [----------] Global test environment tear-down
+[Run Tests/build]   | 11: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 11: [  PASSED  ] 1 test.
+[Run Tests/build]   | 11/14 Test #11: CoroExecutorTest.simpleLifetimeCoroutineManagedCorrectly ...................   Passed    0.00 sec
+[Run Tests/build]   | test 12
+[Run Tests/build]   |       Start 12: CoroExecutorTest.complexLifetimeCoroutineManagedCorrectly
+[Run Tests/build]   | 
+[Run Tests/build]   | 12: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.complexLifetimeCoroutineManagedCorrectly" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 12: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 12: Test timeout computed to be: 10000000
+[Run Tests/build]   | 12: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 12: Note: Google Test filter = CoroExecutorTest.complexLifetimeCoroutineManagedCorrectly
+[Run Tests/build]   | 12: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 12: [----------] Global test environment set-up.
+[Run Tests/build]   | 12: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 12: [ RUN      ] CoroExecutorTest.complexLifetimeCoroutineManagedCorrectly
+[Run Tests/build]   | 12: [       OK ] CoroExecutorTest.complexLifetimeCoroutineManagedCorrectly (40 ms)
+[Run Tests/build]   | 12: [----------] 1 test from CoroExecutorTest (40 ms total)
+[Run Tests/build]   | 12: 
+[Run Tests/build]   | 12: [----------] Global test environment tear-down
+[Run Tests/build]   | 12: [==========] 1 test from 1 test suite ran. (40 ms total)
+[Run Tests/build]   | 12: [  PASSED  ] 1 test.
+[Run Tests/build]   | 12/14 Test #12: CoroExecutorTest.complexLifetimeCoroutineManagedCorrectly ..................   Passed    0.04 sec
+[Run Tests/build]   | test 13
+[Run Tests/build]   |       Start 13: CoroExecutorTest.LifetimeCoroutineReturningValueManagedCorrectly
+[Run Tests/build]   | 
+[Run Tests/build]   | 13: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.LifetimeCoroutineReturningValueManagedCorrectly" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 13: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 13: Test timeout computed to be: 10000000
+[Run Tests/build]   | 13: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 13: Note: Google Test filter = CoroExecutorTest.LifetimeCoroutineReturningValueManagedCorrectly
+[Run Tests/build]   | 13: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 13: [----------] Global test environment set-up.
+[Run Tests/build]   | 13: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 13: [ RUN      ] CoroExecutorTest.LifetimeCoroutineReturningValueManagedCorrectly
+[Run Tests/build]   | 13: [       OK ] CoroExecutorTest.LifetimeCoroutineReturningValueManagedCorrectly (0 ms)
+[Run Tests/build]   | 13: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 13: 
+[Run Tests/build]   | 13: [----------] Global test environment tear-down
+[Run Tests/build]   | 13: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 13: [  PASSED  ] 1 test.
+[Run Tests/build]   | 13/14 Test #13: CoroExecutorTest.LifetimeCoroutineReturningValueManagedCorrectly ...........   Passed    0.01 sec
+[Run Tests/build]   | test 14
+[Run Tests/build]   |       Start 14: CoroExecutorTest.CoroExecutorDestructorDestroysLifetimeManagedCoroutines
+[Run Tests/build]   | 
+[Run Tests/build]   | 14: Test command: /home/caillin/Documents/repos/CoroExecutor/build/tests/tests "--gtest_filter=CoroExecutorTest.CoroExecutorDestructorDestroysLifetimeManagedCoroutines" "--gtest_also_run_disabled_tests"
+[Run Tests/build]   | 14: Working Directory: /home/caillin/Documents/repos/CoroExecutor/build/tests
+[Run Tests/build]   | 14: Test timeout computed to be: 10000000
+[Run Tests/build]   | 14: Running main() from /home/caillin/Documents/repos/CoroExecutor/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[Run Tests/build]   | 14: Note: Google Test filter = CoroExecutorTest.CoroExecutorDestructorDestroysLifetimeManagedCoroutines
+[Run Tests/build]   | 14: [==========] Running 1 test from 1 test suite.
+[Run Tests/build]   | 14: [----------] Global test environment set-up.
+[Run Tests/build]   | 14: [----------] 1 test from CoroExecutorTest
+[Run Tests/build]   | 14: [ RUN      ] CoroExecutorTest.CoroExecutorDestructorDestroysLifetimeManagedCoroutines
+[Run Tests/build]   | 14: [       OK ] CoroExecutorTest.CoroExecutorDestructorDestroysLifetimeManagedCoroutines (0 ms)
+[Run Tests/build]   | 14: [----------] 1 test from CoroExecutorTest (0 ms total)
+[Run Tests/build]   | 14: 
+[Run Tests/build]   | 14: [----------] Global test environment tear-down
+[Run Tests/build]   | 14: [==========] 1 test from 1 test suite ran. (0 ms total)
+[Run Tests/build]   | 14: [  PASSED  ] 1 test.
+[Run Tests/build]   | 14/14 Test #14: CoroExecutorTest.CoroExecutorDestructorDestroysLifetimeManagedCoroutines ...   Passed    0.01 sec
+[Run Tests/build]   | 
+[Run Tests/build]   | 100% tests passed, 0 tests failed out of 14
+[Run Tests/build]   | 
+[Run Tests/build]   | Total Test time (real) =   0.08 sec
+[Run Tests/build]   ✅  Success - Main Test [153.003597ms]
+[Run Tests/build] ⭐ Run Main Archive test results
+[Run Tests/build]   🐳  docker cp src=/home/caillin/.cache/act/actions-upload-artifact@v4/ dst=/var/run/act/actions/actions-upload-artifact@v4/
+[Run Tests/build]   🐳  docker exec cmd=[chown -R 1001:128 /var/run/act/actions/actions-upload-artifact@v4/] user=0 workdir=
+[Run Tests/build]   🐳  docker exec cmd=[/usr/local/bin/node /var/run/act/actions/actions-upload-artifact@v4/dist/upload/index.js] user= workdir=
+[Run Tests/build]   | With the provided path, there will be 1 file uploaded
+[Run Tests/build]   | Artifact name is valid!
+[Run Tests/build]   | Root directory input is valid!
+[Run Tests/build]   ❗  ::error::Unable to get the ACTIONS_RUNTIME_TOKEN env variable
+[Run Tests/build]   ❌  Failure - Main Archive test results [280.13178ms]
+[Run Tests/build] exitcode '1': failure
+[Run Tests/build] ⭐ Run Complete job
+[Run Tests/build]   ✅  Success - Complete job
+[Run Tests/build] 🏁  Job failed
