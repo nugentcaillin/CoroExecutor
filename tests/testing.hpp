@@ -138,7 +138,6 @@ public:
         resume_latch.count_down();
         co_return;
     }
-
     CoroExecutor::LifetimeManagedCoroutine coroutine_with_promise(std::promise<int> prom, int val)
     {
         prom.set_value(val);

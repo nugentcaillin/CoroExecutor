@@ -43,7 +43,7 @@ public:
         std::shared_ptr<CoroExecutor> executor;
     };
 
-    // behaves as std::suspend_never if no executor, as std::suspend_always if present
+    // queue up destruction if handle, and always suspend
     struct final_awaitable {
         bool await_ready() noexcept;
 
@@ -86,7 +86,6 @@ public:
 
     ~LifetimeManagedCoroutine()
     {
-        // safety guard - this should never evaluate to true if used properly
         if (handle_)
         {
             handle_.destroy();

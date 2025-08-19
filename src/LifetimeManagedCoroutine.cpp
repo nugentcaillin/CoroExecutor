@@ -7,15 +7,15 @@ namespace CoroExecutor
 
 bool LifetimeManagedCoroutine::final_awaitable::await_ready() noexcept
 {
-    return !executor_;
+    return false;
 }
 
 void LifetimeManagedCoroutine::final_awaitable::await_suspend(LifetimeManagedCoroutine::promise_type::handle handle) noexcept
 {
-    // guaranteed to have executor to be valid if we entered await_suspend
-
-    // queue up handle for deletion
-    executor_->queue_deletion(handle);
+    if (executor_)
+    {
+        executor_->queue_deletion(handle);
+    }
 }
 
 

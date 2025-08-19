@@ -1,21 +1,29 @@
 #include "testing.hpp"
 #include <latch>
 #include <atomic>
+#include <thread>
+#include <chrono>
 
 TEST_F(CoroExecutorTest, singleCoroutineResumed) 
 {
     std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
+
 
     std::latch resume_latch { 1 };
     std::atomic<int> resume_counter { 0 };
     std::thread::id captured_id {};
     auto coro = test_coro(resume_latch, resume_counter, captured_id);
 
-    exec->queue_resume(handle_helper(coro));
+    auto handle = handle_helper(coro);
+
+    exec->queue_resume(handle);
 
     resume_latch.wait();
 
     EXPECT_EQ(resume_counter, 1);
+
+    handle.destroy();
+
 }
 
 
@@ -27,15 +35,23 @@ TEST_F(CoroExecutorTest, multipleCoroutinesResumed)
     std::atomic<int> resume_counter { 0 };
     std::thread::id captured_id {};
 
+    std::vector<std::coroutine_handle<>> handles;
+
     for (int i { 0 }; i < 5; ++i)
     {
         auto coro = test_coro(resume_latch, resume_counter, captured_id);
-        exec->queue_resume(handle_helper(coro));
+        auto handle = handle_helper(coro);
+        exec->queue_resume(handle);
+        handles.push_back(handle);
     }
     resume_latch.wait();
 
     EXPECT_EQ(resume_counter, 5);
 
+    for (int i { 0 }; i < handles.size(); ++i)
+    {
+        handles[i].destroy();
+    }
 }
 
 
@@ -46,15 +62,23 @@ TEST_F(CoroExecutorTest, multipleCoroutinesResumedWithMultipleThreads)
     std::latch resume_latch { 20 };
     std::atomic<int> resume_counter { 0 };
     std::thread::id captured_id {};
+    std::vector<std::coroutine_handle<>> handles;
 
     for (int i { 0 }; i < 20; ++i)
     {
         auto coro = test_coro(resume_latch, resume_counter, captured_id);
-        exec->queue_resume(handle_helper(coro));
+        auto handle = handle_helper(coro);
+        exec->queue_resume(handle);
+        handles.push_back(handle);
     }
     resume_latch.wait();
 
     EXPECT_EQ(resume_counter, 20);
+
+    for (int i { 0 }; i < handles.size(); ++i)
+    {
+        handles[i].destroy();
+    }
 }
 
 
@@ -83,11 +107,14 @@ TEST_F(CoroExecutorTest, coroutineResumedOnSeparateThreads)
     std::thread::id captured_id {};
     auto coro = test_coro(resume_latch, resume_counter, captured_id);
 
-    exec->queue_resume(handle_helper(coro));
+    auto handle = handle_helper(coro);
+
+    exec->queue_resume(handle);
 
     resume_latch.wait();
 
     EXPECT_FALSE(std::this_thread::get_id() == captured_id);
+    handle.destroy();
 }
 
 
