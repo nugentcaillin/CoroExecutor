@@ -14,7 +14,7 @@ include(FetchContent)
 FetchContent_Declare(
     CoroExecutor
     GIT_REPOSITORY https://github.com/nugentcaillin/CoroExecutor.git
-    GIT_TAG e5198c745066d6abf96002ee8c9b212de7abf9b8
+    GIT_TAG 4998274c7377247ae96196c70ffbd21a02baf7e7 # v1.0.0
 )
 FetchContent_MakeAvailable(CoroExecutor)
 
