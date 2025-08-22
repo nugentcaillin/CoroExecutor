@@ -40,7 +40,7 @@ public:
         final_awaitable final_suspend() noexcept;
         
         // assigned by CoroExecutor in add_lifetime_coroutine
-        std::shared_ptr<CoroExecutor> executor;
+        std::weak_ptr<CoroExecutor> executor;
     };
 
     // queue up destruction if handle, and always suspend
@@ -51,10 +51,10 @@ public:
         void await_suspend(promise_type::handle handle) noexcept;
         void await_resume() noexcept {};
     
-        std::shared_ptr<CoroExecutor> executor_;
+        std::weak_ptr<CoroExecutor> executor_;
     
         final_awaitable
-        ( std::shared_ptr<CoroExecutor> executor
+        ( std::weak_ptr<CoroExecutor> executor
         )
         : executor_(executor)
         {}
@@ -105,8 +105,9 @@ private:
 class CoroExecutor : public std::enable_shared_from_this<CoroExecutor>
 {
 public:
-    // create an instance of CoroExecutor with num_threads threads
-    CoroExecutor(int num_threads);
+
+    void start(int num_threads);
+    void stop();
 
     // queue a coroutine to be resumed on a worker thread
     void queue_resume(std::coroutine_handle<> handle);
@@ -117,8 +118,16 @@ public:
     // queues registered LifetimeManagedCoroutine for deletion
     void queue_deletion(LifetimeManagedCoroutine::promise_type::handle handle);
 
+    static std::shared_ptr<CoroExecutor> getExecutor(int num_threads)
+    {
+        std::shared_ptr<CoroExecutor> executor = std::shared_ptr<CoroExecutor>(new CoroExecutor());
+        executor->start(num_threads);
+        return executor;
+    }
+
     ~CoroExecutor();
 private:
+    CoroExecutor();
 
     void worker_loop();
 

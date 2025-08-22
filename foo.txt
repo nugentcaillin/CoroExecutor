@@ -1,4 +1,0 @@
-[ 21%] Built target CoroExecutor
-[ 35%] Built target gtest
-[ 50%] Built target gtest_main
-[ 57%] Linking CXX executable tests

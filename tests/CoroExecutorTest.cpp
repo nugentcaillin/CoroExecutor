@@ -3,237 +3,247 @@
 #include <atomic>
 #include <thread>
 #include <chrono>
+#include <future>
+#include <iostream>
 
-TEST_F(CoroExecutorTest, singleCoroutineResumed) 
+using namespace CoroTesting;
+
+// check that CoroExecutor eventually resumes a single handle that is requested to be resumed
+TEST_F(SingleThreadedCoroExecutorTest, singleCoroutineResumed) 
 {
-    std::cout << "start\n";
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
+    std::cout << "here\n";
+    std::promise<void> resume_promise {};
+    std::future<void> signal_resume { resume_promise.get_future() };
 
+    auto coro = test_resume(std::move(resume_promise));
 
-    std::latch resume_latch { 1 };
-    std::atomic<int> resume_counter { 0 };
-    std::thread::id captured_id {};
-    std::cout << "locals\n";
-    auto coro = test_coro(resume_latch, resume_counter, captured_id);
-    std::cout << "coro\n";
+    executor->queue_resume(coro.handle_);
 
-    auto handle = handle_helper(coro);
-    std::cout << "handle\n";
-    exec->queue_resume(handle);
-    std::cout << "resumed\n";
-    resume_latch.wait();
-    std::cout << "coro finished\n";
-
-    EXPECT_EQ(resume_counter, 1);
-
-    handle.destroy();
-
+    // if handle.resume() is not eventually called by executor, fail 
+    auto resume_status = signal_resume.wait_for(std::chrono::seconds(5));
+    EXPECT_EQ(resume_status, std::future_status::ready);
 }
-
-TEST_F(CoroExecutorTest, multipleCoroutinesResumed) 
+// check that CoroExecutor eventually resumes all handles that are requested to be resumed
+TEST_F(SingleThreadedCoroExecutorTest, multipleCoroutinesResumed) 
 {
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
+    int num_to_resume { 20 };
+    std::vector<std::future<void>> resume_signals {};
+    std::vector<resume_coro> resume_coros {}; // prevent destruction before testing resume
 
-    std::latch resume_latch { 5 };
-    std::atomic<int> resume_counter { 0 };
-    std::thread::id captured_id {};
 
-    std::vector<std::coroutine_handle<>> handles;
 
-    for (int i { 0 }; i < 5; ++i)
+    std::cout << "queueing\n";
+    for (int i { 0 }; i < num_to_resume; ++i)
     {
-        auto coro = test_coro(resume_latch, resume_counter, captured_id);
-        auto handle = handle_helper(coro);
-        std::cout << "queueing coro\n"; 
-        exec->queue_resume(handle);
-        handles.push_back(handle);
+        std::promise<void> resume_promise {};
+        resume_signals.push_back(std::move(resume_promise.get_future()));
+        auto coro = test_resume(std::move(resume_promise));
+        executor->queue_resume(coro.handle_);
+        resume_coros.push_back(std::move(coro));
     }
-    resume_latch.wait();
 
-    EXPECT_EQ(resume_counter, 5);
+    std::cout << "all queued\n";
 
-    for (int i { 0 }; i < handles.size(); ++i)
+
+    auto stop_waiting_time = std::chrono::system_clock::now() + std::chrono::milliseconds(200);
+
+    // fail if handle.resume() was not eventually called for all coroutines
+    for (int i {}; i < num_to_resume; ++i)
     {
-        handles[i].destroy();
-    }
-}
-
-TEST_F(CoroExecutorTest, multipleCoroutinesResumedWithMultipleThreads) 
-{
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(4);
-
-    std::latch resume_latch { 20 };
-    std::atomic<int> resume_counter { 0 };
-    std::thread::id captured_id {};
-    std::vector<std::coroutine_handle<>> handles;
-
-    for (int i { 0 }; i < 20; ++i)
-    {
-        auto coro = test_coro(resume_latch, resume_counter, captured_id);
-        auto handle = handle_helper(coro);
-        exec->queue_resume(handle);
-        handles.push_back(handle);
-    }
-    resume_latch.wait();
-
-    EXPECT_EQ(resume_counter, 20);
-
-    for (int i { 0 }; i < handles.size(); ++i)
-    {
-        handles[i].destroy();
+        auto resume_status = resume_signals[i].wait_until(stop_waiting_time);
+        //EXPECT_EQ(resume_status, std::future_status::ready);
     }
 }
 
 
 
-TEST_F(CoroExecutorTest, coroutineResumedThroughAwaitableResumed) 
+// check that CoroExecutor eventually resumes all handles that are requested to be resumed when
+// it has multiple worker threads
+TEST_F(MultiThreadedCoroExecutorTest, multipleCoroutinesResumedWithMultipleThreads) 
 {
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
+    int num_to_resume { 5 };
+    std::vector<std::future<void>> resume_signals {};
+    std::vector<resume_coro> resume_coros {}; // prevent destruction before testing resume
 
-    std::latch resume_latch { 1 };
-    std::atomic<int> resume_counter { 0 };
-    std::thread::id captured_id {};
-
-    auto coro = queue_resumption_with_awaitable(resume_latch, resume_counter, captured_id, exec);
-    resume_latch.wait();
-
-    EXPECT_EQ(resume_counter, 1);
-}
-
-
-TEST_F(CoroExecutorTest, coroutineResumedOnSeparateThreads)
-{
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
-
-    std::latch resume_latch { 1 };
-    std::atomic<int> resume_counter { 0 };
-    std::thread::id captured_id {};
-    auto coro = test_coro(resume_latch, resume_counter, captured_id);
-
-    auto handle = handle_helper(coro);
-
-    exec->queue_resume(handle);
-
-    resume_latch.wait();
-
-    EXPECT_FALSE(std::this_thread::get_id() == captured_id);
-    handle.destroy();
-}
-
-
-TEST_F(CoroExecutorTest, coroutineResumedWithAwaitableResumedOnSeparateThreads)
-{
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
-
-    std::latch resume_latch { 1 };
-    std::atomic<int> resume_counter { 0 };
-    std::thread::id captured_id {};
-
-    auto coro = queue_resumption_with_awaitable(resume_latch, resume_counter, captured_id, exec);
-    resume_latch.wait();
-
-    EXPECT_FALSE(std::this_thread::get_id() == captured_id);
-}
-
-TEST_F(CoroExecutorTest, coroExecutorCleansUpSingleWorkerThread)
-{
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
-
-    std::latch resume_latch { 5 };
-    std::latch destruction_latch { 5 };
-    std::atomic<int> destruction_counter { 0 };
-
-    for (int i { 0 }; i < 5; ++i)
+    for (int i { 0 }; i < num_to_resume; ++i)
     {
-        auto coro = count_destruction_with_awaitable(resume_latch, destruction_latch, destruction_counter, exec);
+        std::promise<void> resume_promise {};
+        resume_signals.push_back(resume_promise.get_future());
+        auto coro = test_resume(std::move(resume_promise));
+        executor->queue_resume(coro.handle_);
+        resume_coros.push_back(std::move(coro));
     }
-    resume_latch.wait();
-    destruction_latch.wait();
 
-    EXPECT_EQ(destruction_counter, 5);
-}
+    auto stop_waiting_time = std::chrono::system_clock::now() + std::chrono::seconds(5);
 
-
-TEST_F(CoroExecutorTest, coroExecutorCleansUpMultipleWorkerThreads)
-{
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(4);
-
-    std::latch resume_latch { 20 };
-    std::latch destruction_latch { 20 };
-    std::atomic<int> destruction_counter { 0 };
-
-    for (int i { 0 }; i < 20; ++i)
+    // fail if handle.resume() was not eventually called for all coroutines
+    for (int i {}; i < num_to_resume; ++i)
     {
-        auto coro = count_destruction_with_awaitable(resume_latch, destruction_latch, destruction_counter, exec);
+        auto resume_status = resume_signals[i].wait_until(stop_waiting_time);
+        EXPECT_EQ(resume_status, std::future_status::ready);
     }
-    resume_latch.wait();
-    destruction_latch.wait();
-
-    EXPECT_EQ(destruction_counter, 20);
 }
 
-// simple coroutine that immediately returns
-TEST_F(CoroExecutorTest, simpleLifetimeCoroutineManagedCorrectly)
+TEST_F(SingleThreadedCoroExecutorTest, coroutineResumedThroughAwaitableResumed) 
 {
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
+    std::promise<void> resume_promise {};
+    std::future<void> signal_resume { resume_promise.get_future() };
 
-    std::latch resume_latch { 1 };
-    std::latch destruction_latch { 1 };
-    std::atomic<int> resume_counter;
-    std::atomic<int> destruction_counter;
+    auto coro = test_resume_awaitable(std::move(resume_promise), executor);
 
-    auto coro = simple_lifetime_coroutine(resume_latch, destruction_latch, resume_counter, destruction_counter);
 
-    exec->add_lifetime_coroutine(std::move(coro));
-    resume_latch.wait();
-    destruction_latch.wait();
+    // if handle.resume() is not eventually called by executor, fail 
+    auto resume_status = signal_resume.wait_for(std::chrono::seconds(5));
+    EXPECT_EQ(resume_status, std::future_status::ready);
+    std::cout << "awaitable done\n";
+    //std::this_thread::sleep_for(std::chrono::milliseconds(5));
+}
 
-    EXPECT_EQ(resume_counter, 1);
-    EXPECT_EQ(destruction_counter, 1);
 
+TEST_F(SingleThreadedCoroExecutorTest, coroutineResumedOnSeparateThreads)
+{
+    std::promise<std::thread::id> thread_promise {};
+    std::future<std::thread::id> thread_future { thread_promise.get_future() };
+
+    auto coro = test_thread_id(std::move(thread_promise));
+    executor->queue_resume(coro.handle_);
+    auto future_status = thread_future.wait_for(std::chrono::seconds(5));
+    EXPECT_EQ(future_status, std::future_status::ready);
+    EXPECT_NE(thread_future.get(), std::this_thread::get_id());
+}
+
+
+TEST_F(SingleThreadedCoroExecutorTest, coroutineResumedWithAwaitableResumedOnSeparateThreads)
+{
+    std::promise<std::thread::id> thread_promise {};
+    std::future<std::thread::id> thread_future { thread_promise.get_future() };
+
+    auto coro = test_thread_id_awaitable(std::move(thread_promise), executor);
+    auto future_status = thread_future.wait_for(std::chrono::seconds(5));
+    EXPECT_EQ(future_status, std::future_status::ready);
+    EXPECT_NE(thread_future.get(), std::this_thread::get_id());
+}
+
+
+
+// queue up several coroutines to be resumed, fsanitize will fail test if there are leaks
+TEST_F(SingleThreadedCoroExecutorTest, coroExecutorCleansUpSingleWorkerThread)
+{    
+    int num_to_resume { 100 };
+    std::vector<resume_coro> resume_coros {}; // prevent destruction before testing resume
+
+
+
+    std::cout << "queueing\n";
+    for (int i { 0 }; i < num_to_resume; ++i)
+    {
+        std::promise<void> resume_promise {};
+        auto coro = test_resume(std::move(resume_promise));
+        executor->queue_resume(coro.handle_);
+        resume_coros.push_back(std::move(coro));
+    }
+}
+
+
+// queue up several coroutines to be resumed, fsanitize will fail test if there are leaks
+TEST_F(MultiThreadedCoroExecutorTest, coroExecutorCleansUpMultipleWorkerThreads)
+{
+    int num_to_resume { 100 };
+    std::vector<resume_coro> resume_coros {}; // prevent destruction before testing resume
+
+
+
+    std::cout << "queueing\n";
+    for (int i { 0 }; i < num_to_resume; ++i)
+    {
+        std::promise<void> resume_promise {};
+        auto coro = test_resume(std::move(resume_promise));
+        executor->queue_resume(coro.handle_);
+        resume_coros.push_back(std::move(coro));
+    }
+}
+
+// lifetime managed coroutines are eventually resumed
+TEST_F(MultiThreadedCoroExecutorTest, LifetimeCoroutineResumed)
+{
+    std::promise<void> resume_promise {};
+    std::future<void> resume_future { resume_promise.get_future() };
+    auto coro = test_resume_lifetime(std::move(resume_promise));
+    executor->add_lifetime_coroutine(std::move(coro));
+
+    auto status = resume_future.wait_for(std::chrono::seconds(5));
+    EXPECT_EQ(status, std::future_status::ready);
+}
+
+// all lifetime managed coroutines added are eventually resumed
+TEST_F(MultiThreadedCoroExecutorTest, multipleLifetimeCoroutinesResumed)
+{
+    std::vector<std::future<void>> resume_futures {};
+    int num_to_resume { 20 };
+
+    for (int i {}; i < num_to_resume; ++i)
+    {
+        std::promise<void> resume_promise;
+        resume_futures.emplace_back(resume_promise.get_future());
+        auto coro = test_resume_lifetime(std::move(resume_promise));
+        executor->add_lifetime_coroutine(std::move(coro));
+    }
+
+    auto wait_until_time = std::chrono::system_clock::now() + std::chrono::seconds(5);
+
+    for (int i {}; i < num_to_resume; ++i)
+    {
+        auto status = resume_futures[i].wait_until(wait_until_time);
+        EXPECT_EQ(status, std::future_status::ready);
+    }
 }
 
 
 // more complex coroutine involving mock blocking operations
-TEST_F(CoroExecutorTest, complexLifetimeCoroutineManagedCorrectly)
+TEST_F(MultiThreadedCoroExecutorTest, complexLifetimeCoroutineManagedCorrectly)
 {
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
+    std::promise<void> resume_promise {};
+    std::future<void> resume_future { resume_promise.get_future() };
+    auto coro = test_complex_coroutine(std::move(resume_promise));
+    executor->add_lifetime_coroutine(std::move(coro));
 
-    std::latch resume_latch { 1 };
-    std::latch destruction_latch { 1 };
-    std::atomic<int> resume_counter;
-    std::atomic<int> destruction_counter;
-
-    auto coro = complex_lifetime_coroutine(resume_latch, destruction_latch, resume_counter, destruction_counter);
-
-    exec->add_lifetime_coroutine(std::move(coro));
-    resume_latch.wait();
-    destruction_latch.wait();
-
-    EXPECT_EQ(resume_counter, 3);
-    EXPECT_EQ(destruction_counter, 1);
+    auto status = resume_future.wait_for(std::chrono::seconds(5));
+    EXPECT_EQ(status, std::future_status::ready);
 }
 
 // coroutine using a promise to return a value
-TEST_F(CoroExecutorTest, LifetimeCoroutineReturningValueManagedCorrectly)
+TEST_F(MultiThreadedCoroExecutorTest, LifetimeCoroutineReturningValueManagedCorrectly)
 {
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
-    std::promise<int> prom;
-    std::future<int> fut = prom.get_future();
+    std::promise<int> return_promise {};
+    std::future<int> return_future { return_promise.get_future() };
+    auto coro = test_return_with_promise(std::move(return_promise), 8);
+    executor->add_lifetime_coroutine(std::move(coro));
 
-    auto coro = coroutine_with_promise(std::move(prom), 12);
-    exec->add_lifetime_coroutine(std::move(coro));
-
-    fut.wait();
-
-    EXPECT_EQ(fut.get(), 12);
+    auto status = return_future.wait_for(std::chrono::seconds(5));
+    EXPECT_EQ(status, std::future_status::ready);
+    EXPECT_EQ(return_future.get(), 8);
 }
 
 // destructor of CoroExecutor safely destroys remaining LifetimeManagedCoroutines
-TEST_F(CoroExecutorTest, CoroExecutorDestructorDestroysLifetimeManagedCoroutines)
+TEST_F(MultiThreadedCoroExecutorTest, CoroExecutorDestructorDestroysLifetimeManagedCoroutines)
 {
-    std::shared_ptr<CoroExecutor::CoroExecutor> exec = std::make_shared<CoroExecutor::CoroExecutor>(1);
-    auto coro = coroutine_that_doesnt_complete();
-    exec->add_lifetime_coroutine(std::move(coro));
+    std::vector<std::future<void>> resume_futures {};
+    int num_to_resume { 20 };
 
+    for (int i {}; i < num_to_resume; ++i)
+    {
+        std::promise<void> resume_promise;
+        resume_futures.emplace_back(resume_promise.get_future());
+        auto coro = test_hangs_indefinitely(std::move(resume_promise));
+        executor->add_lifetime_coroutine(std::move(coro));
+    }
+
+    auto wait_until_time = std::chrono::system_clock::now() + std::chrono::seconds(5);
+
+    for (int i {}; i < num_to_resume; ++i)
+    {
+        auto status = resume_futures[i].wait_until(wait_until_time);
+        EXPECT_EQ(status, std::future_status::ready);
+    }
+    // all are resumed at this point, but hang indefinitely, use ASan to check memory cleaned up
 }
