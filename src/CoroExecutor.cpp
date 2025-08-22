@@ -68,7 +68,7 @@ void CoroExecutor::stop()
         stop_requested = true;
     }
     cv.notify_all();
-    for (int i { 0 }; i < worker_threads.size(); ++i)
+    for (unsigned int i { 0 }; i < worker_threads.size(); ++i)
     {   
         if (!worker_threads[i].joinable()) continue;
         if (std::this_thread::get_id() == worker_threads[i].get_id())
