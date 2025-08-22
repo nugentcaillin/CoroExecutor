@@ -9,154 +9,136 @@
 #include <coroutine>
 #include <chrono>
 #include <future>
+#include <memory>
+#include <iostream>
 
 
-class CoroExecutorTest : public testing::Test
+namespace CoroTesting
 {
-public:
-
-    struct queue_resume_coro {
-        struct promise_type {
+    // initial suspend always, automatically destroy at end
+    struct resume_coro
+    {
+        struct promise_type
+        {
             using handle = std::coroutine_handle<promise_type>;
-            queue_resume_coro get_return_object() { return queue_resume_coro(handle::from_promise(*this)); }
-            void unhandled_exception() noexcept {}
+            resume_coro get_return_object() { return resume_coro(handle::from_promise(*this)); }
             std::suspend_never initial_suspend() noexcept { return {}; }
-            void return_void() {};
+            void unhandled_exception() noexcept {}
+            void return_void() {}
             std::suspend_never final_suspend() noexcept { return {}; }
         };
-        
-        queue_resume_coro(promise_type::handle handle)
+
+        resume_coro(promise_type::handle handle)
         : handle_(handle)
         {}
 
+        ~resume_coro()
+        {
+            std::cout << "in resume_coro destructor\n";
+        }
+
         promise_type::handle handle_;
-    };
 
-    class DestructionTracker {
-    public:
-        DestructionTracker(std::atomic<int>& destruction_counter, std::latch& destruction_latch)
-        : destruction_counter_(destruction_counter)
-        , destruction_latch_(destruction_latch)
-        {}
-        ~DestructionTracker()
+        resume_coro(const resume_coro& other) = delete;
+        resume_coro& operator=(const resume_coro& other) = delete;
+        resume_coro(resume_coro&& other)
+        : handle_(other.handle_)
         {
-            destruction_counter_.fetch_add(1);
-            destruction_latch_.count_down();
+            other.handle_ = nullptr;
         }
-    private:
-        std::atomic<int>& destruction_counter_;
-        std::latch& destruction_latch_;
-    };
-
-    struct queue_resume
-    {
-        bool await_ready() noexcept { return false; }
-        void await_suspend(std::coroutine_handle<> h) noexcept 
+        resume_coro& operator=(resume_coro&& other)
         {
-            exec_->queue_resume(h);
+            if (this == &other) return *this;
+            if (handle_) handle_.destroy();
+            std::swap(this->handle_, other.handle_);
+            return *this;
         }
-        void await_resume() noexcept {}
-
-        queue_resume(std::shared_ptr<CoroExecutor::CoroExecutor> exec)
-        : exec_(exec)
-        {}
-
-        std::shared_ptr<CoroExecutor::CoroExecutor> exec_;
     };
 
-    struct mock_blocking
+
+    struct resume_awaitable
     {
-        bool await_ready() noexcept { return false; }
-        void await_suspend(CoroExecutor::LifetimeManagedCoroutine::promise_type::handle h) noexcept 
+        bool await_ready() { return false; }
+        void await_suspend(std::coroutine_handle<> h)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            h.promise().executor->queue_resume(h);
+            executor_->queue_resume(h);
         }
-        void await_resume() noexcept {}
+        void await_resume() {};
 
+
+        resume_awaitable(std::shared_ptr<CoroExecutor::CoroExecutor> executor)
+        : executor_(executor)
+        {}
+
+        std::shared_ptr<CoroExecutor::CoroExecutor> executor_;
     };
 
-    struct mock_blocking_with_int_promise
+    struct mock_blocking_with_resume
     {
-        bool await_ready() noexcept { return false; }
-        void await_suspend(CoroExecutor::LifetimeManagedCoroutine::promise_type::handle h) noexcept 
+        bool await_ready() { return false; }
+        void await_suspend(CoroExecutor::LifetimeManagedCoroutine::promise_type::handle h)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            h.promise().executor->queue_resume(h);
-        }
-        void await_resume() noexcept {}
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-        std::promise<int> prom;
+            std::weak_ptr<CoroExecutor::CoroExecutor> exec = h.promise().executor;
+            if (std::shared_ptr<CoroExecutor::CoroExecutor> executor =  exec.lock())
+            { 
+                executor->queue_deletion(h);
+            }
+        }
+        void await_resume() {};
 
     };
-    CoroExecutor::LifetimeManagedCoroutine test_coro(std::latch& resume_latch, std::atomic<int>& counter, std::thread::id& id) {
-        std::cout << "resumed\n";
-        id = std::this_thread::get_id();
-        counter.fetch_add(1);
-        resume_latch.count_down();
-        co_return;
-    }
 
-    queue_resume_coro queue_resumption_with_awaitable(std::latch& resume_latch, std::atomic<int>& counter, std::thread::id& id, std::shared_ptr<CoroExecutor::CoroExecutor> exec)
+
+    resume_coro test_resume(std::promise<void> resume_promise);
+    resume_coro test_resume_awaitable(std::promise<void> resume_promise, std::shared_ptr<CoroExecutor::CoroExecutor> executor);
+    resume_coro test_thread_id(std::promise<std::thread::id> thread_promise);
+    resume_coro test_thread_id_awaitable(std::promise<std::thread::id> thread_promise, std::shared_ptr<CoroExecutor::CoroExecutor> executor);
+
+    CoroExecutor::LifetimeManagedCoroutine test_resume_lifetime(std::promise<void> resume_promise);
+    CoroExecutor::LifetimeManagedCoroutine test_complex_coroutine(std::promise<void> resume_promise);
+    CoroExecutor::LifetimeManagedCoroutine test_return_with_promise(std::promise<int> prom, int value);
+    CoroExecutor::LifetimeManagedCoroutine test_hangs_indefinitely(std::promise<void> resume_promise);
+
+}
+
+using namespace CoroTesting;
+
+class SingleThreadedCoroExecutorTest : public testing::Test
+{
+protected:
+    SingleThreadedCoroExecutorTest()
     {
-        co_await queue_resume(exec);
-        id = std::this_thread::get_id();
-        counter.fetch_add(1);
-        resume_latch.count_down();
-        co_return;
+        executor = CoroExecutor::CoroExecutor::getExecutor(1);
     }
-
-    queue_resume_coro count_destruction_with_awaitable(std::latch& resume_latch, std::latch& destruction_latch, std::atomic<int>& destruction_counter, std::shared_ptr<CoroExecutor::CoroExecutor> exec)
+    ~SingleThreadedCoroExecutorTest()
     {
-        co_await queue_resume(exec);
-        resume_latch.count_down();
-        
-        DestructionTracker tracker(destruction_counter, destruction_latch);
-        
-        co_return;
+        std::cout << "in fixture destructor\n";
+        executor->stop();
     }
 
-    CoroExecutor::LifetimeManagedCoroutine simple_lifetime_coroutine(std::latch& resume_latch, std::latch& destruction_latch, std::atomic<int>& resume_counter, std::atomic<int>& destruction_counter)
+public:
+        std::shared_ptr<CoroExecutor::CoroExecutor> executor;
+};
+
+
+class MultiThreadedCoroExecutorTest : public testing::Test
+{
+protected:
+    MultiThreadedCoroExecutorTest()
     {
-        DestructionTracker tracker(destruction_counter, destruction_latch);
-        resume_counter.fetch_add(1);
-        resume_latch.count_down();
-        co_return;
+        executor = CoroExecutor::CoroExecutor::getExecutor(4);
     }
-
-    CoroExecutor::LifetimeManagedCoroutine complex_lifetime_coroutine(std::latch& resume_latch, std::latch& destruction_latch, std::atomic<int>& resume_counter, std::atomic<int>& destruction_counter)
+    ~MultiThreadedCoroExecutorTest()
     {
-        DestructionTracker tracker(destruction_counter, destruction_latch);
-        resume_counter.fetch_add(1);
-        
-        co_await mock_blocking();
-        resume_counter.fetch_add(1);
-
-        co_await mock_blocking();
-        resume_counter.fetch_add(1);
-
-        resume_latch.count_down();
-        co_return;
+        std::cout << "in fixture destructor\n";
+        executor->stop();
     }
 
-    CoroExecutor::LifetimeManagedCoroutine coroutine_with_promise(std::promise<int> prom, int val)
-    {
-        prom.set_value(val);
-        co_return;
-    }
-
-    CoroExecutor::LifetimeManagedCoroutine coroutine_that_doesnt_complete()
-    {
-        co_await std::suspend_always();
-        co_return;
-    }
-
-    std::coroutine_handle<> handle_helper(CoroExecutor::LifetimeManagedCoroutine& coro) 
-    {
-        std::coroutine_handle<> handle = coro.handle_;
-        coro.handle_ = nullptr;
-        return handle;
-    }
+public:
+        std::shared_ptr<CoroExecutor::CoroExecutor> executor;
 };
 
 #endif

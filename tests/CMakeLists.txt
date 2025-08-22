@@ -23,10 +23,12 @@ add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} 
   PRIVATE
   testing.hpp 
-  LifetimeManagedCoroutineTest.cpp
   CoroExecutorTest.cpp
+  testing.cpp
 )
 
+target_compile_options(${PROJECT_NAME} PRIVATE -g -fsanitize=address)
+target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
 
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 

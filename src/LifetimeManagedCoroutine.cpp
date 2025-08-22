@@ -12,9 +12,9 @@ bool LifetimeManagedCoroutine::final_awaitable::await_ready() noexcept
 
 void LifetimeManagedCoroutine::final_awaitable::await_suspend(LifetimeManagedCoroutine::promise_type::handle handle) noexcept
 {
-    if (executor_)
+    if (std::shared_ptr<CoroExecutor> executor =  executor_.lock())
     {
-        executor_->queue_deletion(handle);
+        executor->queue_deletion(handle);
     }
 }
 

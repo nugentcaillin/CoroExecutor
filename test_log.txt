@@ -1,0 +1,9 @@
+-- BUILD_TESTS set to True
+-- CMAKE_INSTALL PREFIX already set to /home/caillin/Documents/repos/CoroExecutor/build/install
+-- Configuring done (0.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/caillin/Documents/repos/CoroExecutor/build
+[ 21%] Built target CoroExecutor
+[ 35%] Built target gtest
+[ 50%] Built target gtest_main
+[ 57%] Building CXX object tests/CMakeFiles/tests.dir/CoroExecutorTest.cpp.o
