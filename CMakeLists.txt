@@ -104,5 +104,7 @@ install(FILES
 
 if (BUILD_TESTS)
     #target_compile_options(${PROJECT_NAME} PRIVATE -g)
+    target_compile_options(${PROJECT_NAME} PRIVATE -g -fsanitize=address -Wall -Wextra -Wpedantic -Werror)
+    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
     add_subdirectory(tests)
 endif()
