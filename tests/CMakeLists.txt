@@ -22,7 +22,7 @@ add_executable(tests)
 
 target_sources(tests
     PRIVATE
-        test.cpp
+        ManagedCoroutine.cpp
 )
 
 target_link_libraries(tests
