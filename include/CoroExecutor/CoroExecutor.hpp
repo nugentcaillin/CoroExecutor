@@ -24,9 +24,14 @@
 // 1. requests own destruction only on completion
 // 2. way to co-await and have executor resume when ready
 
+
+// THOUGHTS:
+// - executor only needs to store handles since stack is heap allocated, can use coroutine handle as identifier, but allow return object too
+// - coroutine could be void with only promises/futures for value returns
+// CoroExecutor should enforce access to only be shared pointer
+
 namespace CoroExecutor
 {
-
 
 struct MangagedCoroutine
 {
@@ -46,6 +51,21 @@ struct MangagedCoroutine
 
     std::coroutine_handle<MangagedCoroutine::promise_type> handle_;
 };
+
+
+
+class CoroExecutor
+{
+public:
+    void add_coroutine(MangagedCoroutine& coro);
+    void add_coroutine(std::coroutine_handle<MangagedCoroutine::promise_type> handle);
+    void destroy_coroutine(MangagedCoroutine& coro);
+    void destroy_coroutine(std::coroutine_handle<MangagedCoroutine::promise_type> handle);
+private:
+    CoroExecutor(unsigned int num_threads);
+};
+
+
 
 }
 
