@@ -1,28 +1,248 @@
 #include <CoroExecutor/CoroExecutor.hpp>
 #include <gtest/gtest.h>
-#include <future>
 #include <chrono>
+#include <vector>
+#include <ranges>
+#include <thread>
 
 
-CoroExecutor::MangagedCoroutine signalOnFirstResume(std::promise<bool>& signal)
+struct DestructorSentinel {
+    bool& flag_;
+    DestructorSentinel(bool& flag)
+    : flag_(flag)
+    {};
+
+    ~DestructorSentinel()
+    {
+        flag_ = true;
+    }
+};
+
+CoroExecutor::Task<int> test_destruction(bool& flag)
 {
-    signal.set_value(true);
-    co_return;
+    DestructorSentinel sentinel(flag);
+    co_await std::suspend_always {}; // to keep sentinel alive until handle.destroy() called
+    co_return 1;
 }
 
-TEST(BasicTest, ManagedCoroutineExecutesLazily)
+// frame should only destroyed once with copy assignent
+TEST(BasicTest, TaskCoroutineFrameDestroyedOnceWithCopyAssignment)
 {
-    std::promise<bool> signalFirstResume {};
-    std::future<bool> signal = signalFirstResume.get_future();
-
-    auto coro = signalOnFirstResume(signalFirstResume);
-    auto hasResumed = signal.wait_for(std::chrono::milliseconds(1)); 
-
-    EXPECT_EQ(hasResumed, std::future_status::timeout);
-    coro.handle_.resume();
-
-    hasResumed = signal.wait_for(std::chrono::milliseconds(10)); 
-    EXPECT_EQ(hasResumed, std::future_status::ready);
-    coro.handle_.destroy();
+    bool coroutine_frame_destroyed {};
+    {
+        auto first = test_destruction(coroutine_frame_destroyed);
+        first.handle_.resume(); // so sentinel is created
+        {
+            auto second = first;
+            EXPECT_EQ(coroutine_frame_destroyed, false);
+        }
+        EXPECT_EQ(coroutine_frame_destroyed, false);
+    }
+    EXPECT_EQ(coroutine_frame_destroyed, true);
 }
 
+// self copy assignment should also result in frame being destroyed only once and at appropriate point
+TEST(BasicTest, TaskCoroutineFrameDestroyedOnceWithSelfCopyAssignment)
+{
+    bool coroutine_frame_destroyed {};
+    {
+        auto first = test_destruction(coroutine_frame_destroyed);
+        first.handle_.resume(); // so sentinel is created
+        {
+            first = first;
+            EXPECT_EQ(coroutine_frame_destroyed, false);
+        }
+        EXPECT_EQ(coroutine_frame_destroyed, false);
+    }
+    EXPECT_EQ(coroutine_frame_destroyed, true);
+}
+
+// on copy assignment, if task copied into is last reference, should have frame destroyed
+TEST(BasicTest, TaskOverwritesOnCopyAssignment)
+{
+    bool first_coroutine_frame_destroyed {};
+    bool second_coroutine_frame_destroyed {};
+    {
+        auto first = test_destruction(first_coroutine_frame_destroyed);
+        first.handle_.resume(); // so sentinel is created
+        {
+            auto second = test_destruction(second_coroutine_frame_destroyed);
+            second.handle_.resume();
+            EXPECT_EQ(first_coroutine_frame_destroyed, false);
+            EXPECT_EQ(second_coroutine_frame_destroyed, false);
+            first = second;
+            EXPECT_EQ(first_coroutine_frame_destroyed, true);
+        }
+        EXPECT_EQ(second_coroutine_frame_destroyed, false);
+    }
+    EXPECT_EQ(second_coroutine_frame_destroyed, true);
+}
+
+// copy construction should result in only one destruction of frame
+TEST(BasicTest, TaskCoroutineFrameDestroyedOnceWithCopyConstructor)
+{
+    bool coroutine_frame_destroyed {};
+    {
+        auto first = test_destruction(coroutine_frame_destroyed);
+        first.handle_.resume(); // so sentinel is created
+        {
+            CoroExecutor::Task<int> second(first);
+            EXPECT_EQ(coroutine_frame_destroyed, false);
+        }
+        EXPECT_EQ(coroutine_frame_destroyed, false);
+    }
+    EXPECT_EQ(coroutine_frame_destroyed, true);
+}
+
+// coroutine frame should be destroyed exactly once after move assignment
+TEST(BasicTest, TaskCoroutineFrameDestroyedOnceWithMoveAssignment)
+{
+    bool coroutine_frame_destroyed {};
+    {
+        auto first = test_destruction(coroutine_frame_destroyed);
+        first.handle_.resume(); // so sentinel is created
+        {
+            auto second = std::move(first);
+            EXPECT_EQ(coroutine_frame_destroyed, false);
+        }
+        EXPECT_EQ(coroutine_frame_destroyed, true);
+    }
+}
+
+// when moving into non empty task that is last reference, that task should have its frame destroyed
+TEST(BasicTest, TaskCoroutineFrameDestroyedOnceWithMoveAssignmentIntoNonEmpty)
+{
+    bool first_coroutine_frame_destroyed {};
+    bool second_coroutine_frame_destroyed {};
+    {
+        auto first = test_destruction(first_coroutine_frame_destroyed);
+        first.handle_.resume(); // so sentinel is created
+        {
+            auto second = test_destruction(second_coroutine_frame_destroyed);
+            second.handle_.resume(); // so sentinel is created
+            first = std::move(second);
+            EXPECT_EQ(first_coroutine_frame_destroyed, true);
+            EXPECT_EQ(second_coroutine_frame_destroyed, false);
+        }
+        EXPECT_EQ(second_coroutine_frame_destroyed, false);
+    }
+    EXPECT_EQ(second_coroutine_frame_destroyed, true);
+}
+
+// coroutine handle and frame destruction should be handled correctly on self move assignent
+TEST(BasicTest, TaskCoroutineFrameDestroyedOnceWithMoveAssignmentSelfAssignment)
+{
+    bool coroutine_frame_destroyed {};
+    {
+        auto first = test_destruction(coroutine_frame_destroyed);
+        first.handle_.resume(); // so sentinel is created
+        {
+            first = std::move(first);
+            EXPECT_EQ(coroutine_frame_destroyed, false);
+        }
+        EXPECT_EQ(coroutine_frame_destroyed, false);
+    }
+    EXPECT_EQ(coroutine_frame_destroyed, true);
+}
+
+// coroutine frame should be destroyed exactly once after move
+TEST(BasicTest, TaskCoroutineFrameDestroyedOnceWithMoveConstructor)
+{
+    bool coroutine_frame_destroyed {};
+    {
+        auto first = test_destruction(coroutine_frame_destroyed);
+        first.handle_.resume(); // so sentinel is created
+        {
+            auto second(std::move(first));
+            EXPECT_EQ(coroutine_frame_destroyed, false);
+        }
+        EXPECT_EQ(coroutine_frame_destroyed, true);
+    }
+}
+
+// coroutine frames should swap handles appropriately
+TEST(BasicTest, TaskCoroutineFrameSwapsCorrectly)
+{
+    bool first_coroutine_frame_destroyed {};
+    bool second_coroutine_frame_destroyed {};
+    {
+        auto first = test_destruction(first_coroutine_frame_destroyed);
+        first.handle_.resume(); // so sentinel is created
+        {
+            auto second = test_destruction(second_coroutine_frame_destroyed);
+            second.handle_.resume(); // so sentinel is created
+            std::swap(first, second);
+            EXPECT_EQ(first_coroutine_frame_destroyed, false);
+            EXPECT_EQ(second_coroutine_frame_destroyed, false);
+        }
+        EXPECT_EQ(first_coroutine_frame_destroyed, true);
+        EXPECT_EQ(second_coroutine_frame_destroyed, false);
+    }
+    EXPECT_EQ(second_coroutine_frame_destroyed, true);
+}
+
+
+void concurrent_copy(CoroExecutor::Task<int> coro)
+{
+    auto now = std::chrono::steady_clock::now();
+    // naive synchronization to give ourselves a greater chance of triggering a race condition
+    auto resume_point = std::chrono::ceil<std::chrono::seconds>(now);
+    std::this_thread::sleep_until(resume_point);
+    CoroExecutor::Task<int> copy = coro;
+}
+
+// copies should be able to be made and destroyed on separate threads concurrently with coroutine frame being destroyed exactly once
+TEST(BasicTest, TasksCanBeDestroyedSimultaneouslyOnMultipleThreads)
+{
+    const int NUM_THREADS { 1000 };
+    bool coroutine_frame_destroyed {};
+    // check coroutine frame not destroyed after many concurrent attempts at destruction if one reference remains
+    {
+        std::vector<std::thread> threads {};
+        threads.reserve(NUM_THREADS);
+        
+        auto coro = test_destruction(coroutine_frame_destroyed);
+        coro.handle_.resume(); // to create sentinel
+
+        for ([[maybe_unused]]int _ : std::ranges::views::iota(0, NUM_THREADS))
+        {
+            std::thread t(concurrent_copy, coro);
+            threads.push_back(std::move(t));
+        }
+
+        // join
+        for ([[maybe_unused]]int pos : std::ranges::views::iota(0, NUM_THREADS))
+        {
+            threads.at(pos).join();
+        }
+        // should have one task left, so shouldn't have been destroyed
+        ASSERT_EQ(coroutine_frame_destroyed, false);
+    }
+    ASSERT_EQ(coroutine_frame_destroyed, true);
+
+    coroutine_frame_destroyed = false;
+    // check frame is destroyed after many concurrent attempts at destruction happen with count of task references reaching 0
+    {
+        std::vector<std::thread> threads {};
+        threads.reserve(NUM_THREADS);
+        { 
+        auto coro = test_destruction(coroutine_frame_destroyed);
+        coro.handle_.resume(); // to create sentinel
+
+            for ([[maybe_unused]]int _ : std::ranges::views::iota(0, NUM_THREADS))
+            {
+                std::thread t(concurrent_copy, coro);
+                threads.push_back(std::move(t));
+            }
+        } // original Task out of scope, when last copy in threads falls out of scope, frame should be destroyed
+
+        // join
+        for ([[maybe_unused]]int pos : std::ranges::views::iota(0, NUM_THREADS))
+        {
+            threads.at(pos).join();
+        }
+        ASSERT_EQ(coroutine_frame_destroyed, true);
+    }
+
+    // 
+}

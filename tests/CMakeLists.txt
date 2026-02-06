@@ -20,6 +20,7 @@ enable_testing()
 
 add_executable(tests)
 
+target_compile_options(tests PRIVATE -Wno-self-move)
 target_sources(tests
     PRIVATE
         ManagedCoroutine.cpp
