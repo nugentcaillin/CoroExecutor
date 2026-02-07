@@ -245,7 +245,6 @@ TEST(BasicTest, TasksCanBeDestroyedSimultaneouslyOnMultipleThreads)
         ASSERT_EQ(coroutine_frame_destroyed, true);
     }
 
-    // 
 }
 
 CoroExecutor::Task<int> return_value(int val)
@@ -296,3 +295,4 @@ TEST(BasicTest, ExecutionDoesntResumeIfCoAwaitHangs)
     auto status = recieved.wait_for(std::chrono::seconds(1));
     ASSERT_EQ(status, std::future_status::timeout);
 }
+

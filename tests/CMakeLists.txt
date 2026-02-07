@@ -23,7 +23,7 @@ add_executable(tests)
 target_compile_options(tests PRIVATE -Wno-self-move)
 target_sources(tests
     PRIVATE
-        ManagedCoroutine.cpp
+        Task.cpp
 )
 
 target_link_libraries(tests
