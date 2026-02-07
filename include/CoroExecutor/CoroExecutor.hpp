@@ -67,6 +67,12 @@ struct Task
             if (to_resume) to_resume.resume(); 
         }
         void unhandled_exception () { exception_ = std::current_exception(); }
+        promise_type()
+        : value_ {}
+        , exception_ { nullptr }
+        , ref_count { 0 }
+        , to_resume { nullptr }
+        {}
     };
 
     // awaitable to get product from co_await

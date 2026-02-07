@@ -248,36 +248,51 @@ TEST(BasicTest, TasksCanBeDestroyedSimultaneouslyOnMultipleThreads)
     // 
 }
 
-CoroExecutor::Task<int> return_value([[maybe_unused]]int val)
+CoroExecutor::Task<int> return_value(int val)
 {
-
-    std::cout << "here\n";
-    co_await std::suspend_always {};
-    std::cout << "here2\n";
-    co_return 5;
+    co_return val;
 }
 
-CoroExecutor::Task<int> recieve_val_with_co_await([[maybe_unused]]int val, std::promise<bool>& sentinel)
+
+CoroExecutor::Task<int> fail_to_return_val(int val)
 {
-    std::cout << "here\n";
-    CoroExecutor::Task<int> coro = return_value(4);
-    std::cout << "is ready in recieve: " << coro.handle_.promise().value_.has_value() << "\n";
-    // coro.handle_.resume();
-    int val_after = 2;//co_await coro;
-    std::cout << "val: " << val_after << "\n";
-    if (val_after == val) sentinel.set_value(true);
+    co_await std::suspend_always {}; // get stuck
+    co_return val;
+}
+
+
+CoroExecutor::Task<int> recieve_val_with_co_await(int expected_val, std::promise<bool>& sentinel, CoroExecutor::Task<int> receive_fn)
+{
+    receive_fn.handle_.resume();
+    int val = co_await receive_fn;
+    if (val == expected_val) sentinel.set_value(true);
+    else sentinel.set_value(false);
     co_return 0;
 }
 
 
-TEST(BasicTest, TaskCanReturnValueThroughCoAwait)
+
+
+
+// execution should resume when value recieved with co_await 
+TEST(BasicTest, ExecutionResumesAfterCoAwaitReturnsValue)
 {
     std::promise<bool> sentinel;
     std::future<bool> recieved = sentinel.get_future();
-    CoroExecutor::Task<int> coro = recieve_val_with_co_await(3, sentinel);
+    CoroExecutor::Task<int> coro = recieve_val_with_co_await(3, sentinel, return_value(3));
     coro.handle_.resume();
     auto status = recieved.wait_for(std::chrono::seconds(1));
     ASSERT_EQ(status, std::future_status::ready);
     ASSERT_EQ(recieved.get(), true);
-    ASSERT_EQ(1, 0);
+}
+
+// execution should not resume if value not received with co_await
+TEST(BasicTest, ExecutionDoesntResumeIfCoAwaitHangs)
+{
+    std::promise<bool> sentinel;
+    std::future<bool> recieved = sentinel.get_future();
+    CoroExecutor::Task<int> coro = recieve_val_with_co_await(3, sentinel, fail_to_return_val(3));
+    coro.handle_.resume();
+    auto status = recieved.wait_for(std::chrono::seconds(1));
+    ASSERT_EQ(status, std::future_status::timeout);
 }
