@@ -4,6 +4,7 @@
 #include <vector>
 #include <ranges>
 #include <thread>
+#include <future>
 
 
 struct DestructorSentinel {
@@ -245,4 +246,38 @@ TEST(BasicTest, TasksCanBeDestroyedSimultaneouslyOnMultipleThreads)
     }
 
     // 
+}
+
+CoroExecutor::Task<int> return_value([[maybe_unused]]int val)
+{
+
+    std::cout << "here\n";
+    co_await std::suspend_always {};
+    std::cout << "here2\n";
+    co_return 5;
+}
+
+CoroExecutor::Task<int> recieve_val_with_co_await([[maybe_unused]]int val, std::promise<bool>& sentinel)
+{
+    std::cout << "here\n";
+    CoroExecutor::Task<int> coro = return_value(4);
+    std::cout << "is ready in recieve: " << coro.handle_.promise().value_.has_value() << "\n";
+    // coro.handle_.resume();
+    int val_after = 2;//co_await coro;
+    std::cout << "val: " << val_after << "\n";
+    if (val_after == val) sentinel.set_value(true);
+    co_return 0;
+}
+
+
+TEST(BasicTest, TaskCanReturnValueThroughCoAwait)
+{
+    std::promise<bool> sentinel;
+    std::future<bool> recieved = sentinel.get_future();
+    CoroExecutor::Task<int> coro = recieve_val_with_co_await(3, sentinel);
+    coro.handle_.resume();
+    auto status = recieved.wait_for(std::chrono::seconds(1));
+    ASSERT_EQ(status, std::future_status::ready);
+    ASSERT_EQ(recieved.get(), true);
+    ASSERT_EQ(1, 0);
 }

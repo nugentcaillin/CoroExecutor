@@ -6,6 +6,8 @@
 #include <iostream>
 #include <atomic>
 #include <utility>
+#include <optional>
+#include <stdexcept>
 
 // thread pool to manage lifecycle of coroutines
 // it needs:
@@ -32,6 +34,7 @@
 // 1. requests own destruction only when last reference
 // 2. way to co-await and have executor resume when ready
 //    - can either resume where awaited async call happens, or 
+// 3. support to synchronously block for result or co_await
 
 
 // THOUGHTS:
@@ -50,16 +53,52 @@ struct Task
 
     struct promise_type
     {
-        T value_;
+        std::optional<T> value_;
         std::exception_ptr exception_;
         std::atomic<int> ref_count;
+        std::coroutine_handle<> to_resume;
 
         Task get_return_object() { return Task(handle_type::from_promise(*this)); }
         std::suspend_always initial_suspend() { return {}; }
         std::suspend_always final_suspend() noexcept { return {}; }
-        void return_value(T value) { value_ = value; }
+        void return_value(T value) { 
+            std::cout << "return value called with arg: " << value << "\n";
+            value_ = value;
+            if (to_resume) to_resume.resume(); 
+        }
         void unhandled_exception () { exception_ = std::current_exception(); }
     };
+
+    // awaitable to get product from co_await
+    struct awaiter
+    {
+        bool ready_;
+        Task to_await_;
+        awaiter(bool ready, Task to_await)
+        : ready_ { ready }
+        , to_await_(to_await) // copy so this task lives until result is consumed
+        {}
+        bool await_ready() { return ready_; }
+        void await_suspend(std::coroutine_handle<> to_resume)
+        {
+            to_await_.handle_.promise().to_resume = to_resume;
+        }
+        T await_resume() 
+        {
+            // only enter this value if we have a value, or coroutine needs to throw exception,
+            // this runs on thread that resumes coroutine, so safe to throw
+            if (to_await_.handle_.promise().value_) return to_await_.handle_.promise().value_.value();
+            std::exception_ptr exception = to_await_.handle_.promise().exception_;
+            if (!exception) throw(new std::logic_error("resumed Task return awaitable without value or exception"));
+            std::rethrow_exception(exception); 
+        }
+
+    };
+
+    awaiter operator co_await() { 
+        std::cout << "in co await, should return instantly: " << handle_.promise().value_.has_value() << "\n";
+        if (handle_.promise().value_.has_value()) std::cout << handle_.promise().value_.value() << "\n";
+        return awaiter(handle_.promise().value_.has_value(), *this); }
 
 
     Task(handle_type handle)
