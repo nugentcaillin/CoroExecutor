@@ -4,6 +4,7 @@
 #include <vector>
 #include <ranges>
 #include <thread>
+#include <future>
 
 
 struct DestructorSentinel {
@@ -245,4 +246,53 @@ TEST(BasicTest, TasksCanBeDestroyedSimultaneouslyOnMultipleThreads)
     }
 
     // 
+}
+
+CoroExecutor::Task<int> return_value(int val)
+{
+    co_return val;
+}
+
+
+CoroExecutor::Task<int> fail_to_return_val(int val)
+{
+    co_await std::suspend_always {}; // get stuck
+    co_return val;
+}
+
+
+CoroExecutor::Task<int> recieve_val_with_co_await(int expected_val, std::promise<bool>& sentinel, CoroExecutor::Task<int> receive_fn)
+{
+    receive_fn.handle_.resume();
+    int val = co_await receive_fn;
+    if (val == expected_val) sentinel.set_value(true);
+    else sentinel.set_value(false);
+    co_return 0;
+}
+
+
+
+
+
+// execution should resume when value recieved with co_await 
+TEST(BasicTest, ExecutionResumesAfterCoAwaitReturnsValue)
+{
+    std::promise<bool> sentinel;
+    std::future<bool> recieved = sentinel.get_future();
+    CoroExecutor::Task<int> coro = recieve_val_with_co_await(3, sentinel, return_value(3));
+    coro.handle_.resume();
+    auto status = recieved.wait_for(std::chrono::seconds(1));
+    ASSERT_EQ(status, std::future_status::ready);
+    ASSERT_EQ(recieved.get(), true);
+}
+
+// execution should not resume if value not received with co_await
+TEST(BasicTest, ExecutionDoesntResumeIfCoAwaitHangs)
+{
+    std::promise<bool> sentinel;
+    std::future<bool> recieved = sentinel.get_future();
+    CoroExecutor::Task<int> coro = recieve_val_with_co_await(3, sentinel, fail_to_return_val(3));
+    coro.handle_.resume();
+    auto status = recieved.wait_for(std::chrono::seconds(1));
+    ASSERT_EQ(status, std::future_status::timeout);
 }
