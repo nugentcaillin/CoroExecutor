@@ -2,6 +2,17 @@
 #define CORO_EXECUTOR_UMBRELLA_H
 
 #include <CoroExecutor/Task/Task.hpp>
+#include <CoroExecutor/Pool/Pool.hpp>
+
+// Thread pool and Task<T> type to manage the execution of C++20 coroutines.
+// Provides coroutine type that is thread safe, and ensures coroutine
+// frame is only destroyed once, and ability to either resume execution
+// where data is obtained, or hand off to a worker thread to resume 
+
+// TODO:
+// allow multiple coroutines to await a single task, currently is not thread safe if multiple await
+// add tests for exception throwing of Task
+// Implement interface for Pool
 
 
 // Planning:
@@ -38,19 +49,5 @@
 // - should enforce access to only be shared pointer - factory method,
 //   can use this factory to give some defaults i.e. default strategy for next task to resume 
 
-namespace CoroExecutor
-{
-
-
-class CoroExecutor
-{
-public:
-private:
-    CoroExecutor(unsigned int num_threads);
-};
-
-
-
-}
 
 #endif // CORO_EXECUTOR_UMBRELLA_H
