@@ -253,18 +253,10 @@ CoroExecutor::Task<int> return_value(int val)
 }
 
 
-CoroExecutor::Task<int> fail_to_return_val(int val)
+CoroExecutor::Task<int> recieve_val_with_co_await(int expected_val, std::promise<int> sentinel, CoroExecutor::Task<int> receive_fn)
 {
-    co_await std::suspend_always {}; // get stuck
-    co_return val;
-}
-
-
-CoroExecutor::Task<int> recieve_val_with_co_await(int expected_val, std::promise<bool>& sentinel, CoroExecutor::Task<int> receive_fn)
-{
-    receive_fn.handle_.resume();
     int val = co_await receive_fn;
-    if (val == expected_val) sentinel.set_value(true);
+    if (val == expected_val) sentinel.set_value(val);
     else sentinel.set_value(false);
     co_return 0;
 }
@@ -276,22 +268,162 @@ CoroExecutor::Task<int> recieve_val_with_co_await(int expected_val, std::promise
 // execution should resume when value recieved with co_await 
 TEST(BasicTest, ExecutionResumesAfterCoAwaitReturnsValue)
 {
-    std::promise<bool> sentinel;
-    std::future<bool> recieved = sentinel.get_future();
-    CoroExecutor::Task<int> coro = recieve_val_with_co_await(3, sentinel, return_value(3));
+    std::promise<int> sentinel;
+    std::future<int> recieved = sentinel.get_future();
+    auto return_coro = return_value(3);
+    CoroExecutor::Task<int> coro = recieve_val_with_co_await(3, std::move(sentinel), return_coro);
     coro.handle_.resume();
+    return_coro.handle_.resume();
     auto status = recieved.wait_for(std::chrono::seconds(1));
     ASSERT_EQ(status, std::future_status::ready);
-    ASSERT_EQ(recieved.get(), true);
+    ASSERT_EQ(recieved.get(), 3);
 }
 
 // execution should not resume if value not received with co_await
 TEST(BasicTest, ExecutionDoesntResumeIfCoAwaitHangs)
 {
-    std::promise<bool> sentinel;
-    std::future<bool> recieved = sentinel.get_future();
-    CoroExecutor::Task<int> coro = recieve_val_with_co_await(3, sentinel, fail_to_return_val(3));
+    std::promise<int> sentinel;
+    std::future<int> recieved = sentinel.get_future();
+    auto return_coro = return_value(3);
+    CoroExecutor::Task<int> coro = recieve_val_with_co_await(3, std::move(sentinel), return_coro);
     coro.handle_.resume();
     auto status = recieved.wait_for(std::chrono::seconds(1));
     ASSERT_EQ(status, std::future_status::timeout);
 }
+
+
+
+void concurrent_resume(CoroExecutor::Task<int> coro)
+{
+    auto now = std::chrono::steady_clock::now();
+    // naive synchronization to give ourselves a greater chance of triggering a race condition
+    using ms100 = std::chrono::duration<double, std::ratio<1, 10>>;
+    auto resume_point = std::chrono::ceil<ms100>(now);
+    std::this_thread::sleep_until(resume_point);
+    coro.handle_.resume();
+}
+
+
+
+class MultiCoAwaitTest : public testing::Test {
+protected:
+    int num_to_await_;
+    int expected_val_;
+    std::vector<std::future<int>> received_value_;
+    std::vector<CoroExecutor::Task<int>> receiving_coroutines_;
+    CoroExecutor::Task<int> coro_awaited_many_times_;
+
+    MultiCoAwaitTest(int num_to_await, int expected_val)
+    : num_to_await_ { num_to_await }
+    , expected_val_ { expected_val }
+    , received_value_ {}
+    , receiving_coroutines_ {}
+    , coro_awaited_many_times_(return_value(expected_val))
+    {}
+
+    MultiCoAwaitTest() : MultiCoAwaitTest(5, 3) {}
+
+    void SetUp() override
+    {
+        for ([[maybe_unused]] int _: std::ranges::views::iota(0, num_to_await_))
+        {
+            std::promise<int> sentinel {};
+            received_value_.push_back(sentinel.get_future()); 
+            receiving_coroutines_.push_back(recieve_val_with_co_await(expected_val_, std::move(sentinel), coro_awaited_many_times_));
+        }
+    }
+
+    int count_received_correct_value()
+    {
+        auto wait_until_point = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+        int count {};
+        for (std::future<int>& received : received_value_)
+        {
+            auto status = received.wait_until(wait_until_point); 
+            if (status == std::future_status::ready && received.get() == expected_val_) ++count;
+        }
+        return count;
+    }
+
+    int count_ready()
+    {
+        auto wait_until_point = std::chrono::steady_clock::now();
+        int count {};
+        for (std::future<int>& received : received_value_)
+        {
+            auto status = received.wait_until(wait_until_point); 
+            if (status == std::future_status::ready) ++count;
+
+        }
+        return count;
+    }
+};
+
+class MultiCoAwaitTestSingleThreaded: public MultiCoAwaitTest 
+{
+protected:
+    MultiCoAwaitTestSingleThreaded()
+    : MultiCoAwaitTest(5, 3)
+    {}
+
+    void SetUp() override
+    {
+        MultiCoAwaitTest::SetUp();
+        for (auto coro : receiving_coroutines_) coro.handle_.resume();
+    }
+
+};
+
+
+
+class MultiCoAwaitTestMultiThreaded : public MultiCoAwaitTest 
+{
+protected:
+    std::vector<std::thread> threads_;
+    MultiCoAwaitTestMultiThreaded()
+    : MultiCoAwaitTest(100, 3)
+    , threads_ {}
+    {}
+
+    void SetUp() override
+    {
+        MultiCoAwaitTest::SetUp();
+        for (auto coro : receiving_coroutines_)
+        {
+            threads_.push_back(std::thread(concurrent_resume, coro));
+        }
+    }
+
+    void TearDown() override 
+    {
+        for (auto& thread : threads_) thread.join();
+    }
+};
+
+
+TEST_F(MultiCoAwaitTestSingleThreaded, AllAwaitersSuspend)
+{
+    ASSERT_EQ(count_ready(), 0); 
+}
+
+
+TEST_F(MultiCoAwaitTestSingleThreaded, AllAwaitersGetCorrectValue)
+{
+    coro_awaited_many_times_.handle_.resume();
+    ASSERT_EQ(count_received_correct_value(), num_to_await_);
+}
+
+
+TEST_F(MultiCoAwaitTestMultiThreaded, AllAwaitersSuspend)
+{
+    ASSERT_EQ(count_ready(), 0); 
+}
+
+
+TEST_F(MultiCoAwaitTestMultiThreaded, AllAwaitersGetCorrectValue)
+{
+    coro_awaited_many_times_.handle_.resume();
+    ASSERT_EQ(count_received_correct_value(), num_to_await_);
+}
+
+

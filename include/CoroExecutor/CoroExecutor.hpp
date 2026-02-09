@@ -11,9 +11,10 @@
 
 // TODO:
 // - Implement interface for Pool
-// - allow multiple coroutines to await a single task, currently is not thread safe if multiple await - 
-//   will overwrite coroutine handle to resume
 // - add tests for exception throwing of Task
+// - rewrite earlier tests to use fixtures
+// - implement some wrapper for handles to go into pool with priority
+// - split task into SharedTask and move-only UniqueTask
 
 // NICE TO HAVES:
 // - Priority system 
