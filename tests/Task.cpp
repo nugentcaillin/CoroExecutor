@@ -245,7 +245,6 @@ TEST(BasicTest, TasksCanBeDestroyedSimultaneouslyOnMultipleThreads)
         ASSERT_EQ(coroutine_frame_destroyed, true);
     }
 
-    // 
 }
 
 CoroExecutor::Task<int> return_value(int val)
