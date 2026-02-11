@@ -84,6 +84,9 @@ struct Task
     {
         if (handle_) handle_.promise().ref_count.fetch_add(1);
     }
+    Task()
+    : Task(nullptr)
+    {}
 
     Task(const Task& other) : Task(other.handle_) {}
     Task& operator=(const Task& other)
@@ -115,6 +118,7 @@ struct Task
         if (!handle_) return;
         // destroy this handle if this is unique owner
         if (handle_ && handle_.promise().ref_count.fetch_sub(1) == 1) handle_.destroy();
+        handle_ = nullptr; // only relevant if destructor called multiple times for same object
     }
 
     std::coroutine_handle<Task::promise_type> handle_;
