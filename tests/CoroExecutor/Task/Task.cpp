@@ -4,6 +4,7 @@
 #include "Fixtures.hpp"
 
 
+
 TEST_F(SmallTaskDestructionTest, FrameNotDestroyedIfReferenceExists)
 {
     ASSERT_EQ(frames_destroyed_.at(0), false);

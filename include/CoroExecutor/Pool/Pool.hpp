@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <mutex>
+#include <CoroExecutor/ScheduleStrategy/ScheduleStrategy.hpp>
 
 namespace CoroExecutor
 {
@@ -16,17 +17,14 @@ struct WorkItem
 
 
 template <typename T>
-concept StorageStrategy = requires(T strat, WorkItem w, size_t thread_id) 
+concept StorageStrategy = requires(T strat, WorkItem w, size_t thread_id, size_t queue_size) 
 {
+    strat();
+    strat(queue_size);
     strat.push(w, thread_id);
-    {strat.pop(thread_id)} -> std::convertible_to<std::optional<WorkItem>>;
+    {strat.pop(thread_id)} -> std::same_as<std::optional<WorkItem>>;
 };
 
-template<typename T>
-concept ScheduleStrategy = requires(T strat)
-{
-    {strat.get_target_thread_id()} -> std::convertible_to<size_t>;
-};
 
 
 
@@ -42,14 +40,6 @@ private:
     std::mutex queue_mutex_;
 };
 
-class RoundRobinStrategy
-{
-public:
-    size_t get_target_thread_id();
-private:
-    size_t num_threads_;
-    size_t next_thread_;
-};
 
 
 
@@ -57,11 +47,12 @@ template
 <StorageStrategy StorageStrat, ScheduleStrategy ScheduleStrat>
 class Pool
 {
-friend class PoolFactory;
+    template<StorageStrategy StorageStratB, ScheduleStrategy ScheduleStratB>
+    friend class PoolFactory;
 public:
     void schedule(WorkItem w);
 private:
-    Pool();
+    Pool(size_t num_threads, size_t queue_size);
     StorageStrat storage;
     ScheduleStrat scheduler;
 };
@@ -73,12 +64,13 @@ template
 class PoolFactory
 {
 public:
-    void reset();
-    void setThreads(size_t thread_count);
-    void setQueueSize(size_t queue_size);
-    Pool<StorageStrat, ScheduleStrat get();
+    PoolFactory();
+    PoolFactory& set_threads(size_t thread_count);
+    PoolFactory& setQueueSize(size_t queue_size);
+    Pool<StorageStrat, ScheduleStrat>&& get();
 private:
-    Pool product_;
+    size_t thread_count_;
+    size_t queue_size_;
 };
 
 
