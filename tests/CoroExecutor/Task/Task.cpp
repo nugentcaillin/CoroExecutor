@@ -1,4 +1,4 @@
-#include <CoroExecutor/CoroExecutor.hpp>
+#include <CoroExecutor/Umbrella.hpp>
 #include <gtest/gtest.h>
 #include "Helpers.hpp"
 #include "Fixtures.hpp"

@@ -1,7 +1,7 @@
 #ifndef CORO_EXECUTOR_TEST_HELPER_H
 #define CORO_EXECUTOR_TEST_HELPER_H
 
-#include <CoroExecutor/CoroExecutor.hpp>
+#include <CoroExecutor/Umbrella.hpp>
 #include <gtest/gtest.h>
 #include <chrono>
 #include <vector>

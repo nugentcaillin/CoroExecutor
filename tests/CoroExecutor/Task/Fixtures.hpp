@@ -1,7 +1,7 @@
 #ifndef CORO_EXECUTOR_TEST_FIXTURE_H
 #define CORO_EXECUTOR_TEST_FIXTURE_H
 
-#include <CoroExecutor/CoroExecutor.hpp>
+#include <CoroExecutor/Umbrella.hpp>
 #include "Helpers.hpp"
 #include <gtest/gtest.h>
 #include <vector>

@@ -1,0 +1,5 @@
+#ifndef CORO_EXECUTOR_STORAGE_STRATEGY_UMBRELLA_H
+#define CORO_EXECUTOR_STORAGE_STRATEGY_UMBRELLA_H
+#include "StorageStrategy.hpp"
+#include "CentralizedQueueStrategy.hpp"
+#endif // CORO_EXECUTOR_STORAGE_STRATEGY_UMBRELLA_H

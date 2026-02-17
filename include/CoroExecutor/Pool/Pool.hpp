@@ -10,14 +10,6 @@ namespace CoroExecutor
 {
 
 
-
-
-
-
-
-
-
-
 template 
 <StorageStrategy StorageStrat, ScheduleStrategy ScheduleStrat>
 class Pool

@@ -2,7 +2,9 @@
 #define CORO_EXECUTOR_UMBRELLA_H
 
 #include <CoroExecutor/Task/Task.hpp>
-#include <CoroExecutor/Pool/Pool.hpp>
+#include <CoroExecutor/Pool/Umbrella.hpp>
+#include <CoroExecutor/ScheduleStrategy/Umbrella.hpp>
+#include <CoroExecutor/StorageStrategy/Umbrella.hpp>
 
 // Thread pool and Task<T> type to manage the execution of C++20 coroutines.
 // Provides coroutine type that is thread safe, and ensures coroutine
@@ -10,7 +12,9 @@
 // where data is obtained, or hand off to a worker thread to resume 
 
 // TODO:
-// - Implement interface for Pool
+// - Implment Pool 
+// - Implement RoundRobinStrategy
+// - Implement 
 // - add tests for exception throwing of Task
 // - rewrite earlier tests to use fixtures
 // - implement some wrapper for handles to go into pool with priority
