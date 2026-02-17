@@ -4,41 +4,16 @@
 #include <queue>
 #include <mutex>
 #include <CoroExecutor/ScheduleStrategy/ScheduleStrategy.hpp>
+#include <CoroExecutor/StorageStrategy/StorageStrategy.hpp>
 
 namespace CoroExecutor
 {
 
 
-struct WorkItem
-{
-    int priority;
-    std::coroutine_handle<> h;
-};
-
-
-template <typename T>
-concept StorageStrategy = requires(T strat, WorkItem w, size_t thread_id, size_t queue_size) 
-{
-    strat();
-    strat(queue_size);
-    strat.push(w, thread_id);
-    {strat.pop(thread_id)} -> std::same_as<std::optional<WorkItem>>;
-};
 
 
 
 
-
-
-class CentralizedQueue
-{
-public:
-    void push(WorkItem w, size_t thread_id);
-    std::optional<WorkItem> pop(size_t thread_id);
-private:
-    std::queue<WorkItem> queue_;
-    std::mutex queue_mutex_;
-};
 
 
 

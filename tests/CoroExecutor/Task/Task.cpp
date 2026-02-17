@@ -3,7 +3,7 @@
 #include "Helpers.hpp"
 #include "Fixtures.hpp"
 
-
+#include <CoroExecutor/StorageStrategy/CentralizedQueueStrategy.hpp>
 
 TEST_F(SmallTaskDestructionTest, FrameNotDestroyedIfReferenceExists)
 {

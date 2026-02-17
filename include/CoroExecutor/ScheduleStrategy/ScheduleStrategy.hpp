@@ -2,6 +2,7 @@
 #define CORO_EXECUTOR_SCHEDULE_STRATEGY_H
 
 #include <concepts>
+#include <cstddef>
 
 
 namespace CoroExecutor
