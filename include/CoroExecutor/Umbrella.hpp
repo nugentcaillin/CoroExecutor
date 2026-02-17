@@ -15,7 +15,6 @@
 // - Implment Pool 
 // - Implement RoundRobinStrategy
 // - Implement CentralizedQueueStrategy
-// - make tests folder mirror include
 // - add tests for exception throwing of Task
 // - rewrite earlier tests to use fixtures
 // - implement some wrapper for handles to go into pool with priority

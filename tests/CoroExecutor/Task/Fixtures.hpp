@@ -1,5 +1,5 @@
-#ifndef CORO_EXECUTOR_TEST_FIXTURE_H
-#define CORO_EXECUTOR_TEST_FIXTURE_H
+#ifndef CORO_EXECUTOR_TEST_TASK_FIXTURE_H
+#define CORO_EXECUTOR_TEST_TASK_FIXTURE_H
 
 #include <CoroExecutor/Umbrella.hpp>
 #include "Helpers.hpp"
@@ -10,16 +10,6 @@
 #include <future>
 
 
-class RoundRobinTest : public testing::Test 
-{
-protected:
-    size_t num_dummy_threads_;
-    CoroExecutor::RoundRobinStrategy round_robin_;
-    void advance(size_t calls)
-    {
-        for ([[maybe_unused]]int _ : std::ranges::views::iota(0u, calls)) round_robin_.get_target_thread_id();
-    }
-};
 
 class TaskDestructionTest : public testing::Test
 {
@@ -211,4 +201,4 @@ protected:
 
 };
 
-#endif // CORO_EXECUTOR_TEST_FIXTURE_H
+#endif // CORO_EXECUTOR_TEST_TASK_FIXTURE_H

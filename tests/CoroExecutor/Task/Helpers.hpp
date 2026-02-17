@@ -1,5 +1,5 @@
-#ifndef CORO_EXECUTOR_TEST_HELPER_H
-#define CORO_EXECUTOR_TEST_HELPER_H
+#ifndef CORO_EXECUTOR_TEST_TASK_HELPER_H
+#define CORO_EXECUTOR_TEST_TASK_HELPER_H
 
 #include <CoroExecutor/Umbrella.hpp>
 #include <gtest/gtest.h>
@@ -77,4 +77,4 @@ void concurrent_resume(CoroExecutor::Task<int> coro)
 
 
 
-#endif // CORO_EXECUTOR_TEST_HELPER_H
+#endif // CORO_EXECUTOR_TEST_TASK_HELPER_H

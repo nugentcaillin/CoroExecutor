@@ -5,8 +5,8 @@ namespace CoroExecutor
 
 
 RoundRobinStrategy::RoundRobinStrategy(size_t num_threads)
-: num_threads_ { num_threads }
-, next_thread_(0)
+: next_thread_(0)
+, num_threads_ { num_threads }
 {}
 
 size_t RoundRobinStrategy::get_target_thread_id()

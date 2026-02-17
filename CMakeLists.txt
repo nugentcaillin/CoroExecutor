@@ -42,7 +42,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_sources(${PROJECT_NAME}
     PRIVATE
-    "src/ManagedCoroutine/ManagedCoroutine.cpp"
+    "src/CoroExecutor/ScheduleStrategy/RoundRobinStrategy/RoundRobinStrategy.cpp"
 )
 
 

@@ -24,6 +24,7 @@ target_compile_options(tests PRIVATE -Wno-self-move)
 target_sources(tests
     PRIVATE
         CoroExecutor/Task/Task.cpp
+        CoroExecutor/ScheduleStrategy/RoundRobinStrategy.cpp
 )
 
 target_link_libraries(tests
