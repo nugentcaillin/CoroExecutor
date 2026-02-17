@@ -9,6 +9,18 @@
 #include <thread>
 #include <future>
 
+
+class RoundRobinTest : public testing::Test 
+{
+protected:
+    size_t num_dummy_threads_;
+    CoroExecutor::RoundRobinStrategy round_robin_;
+    void advance(size_t calls)
+    {
+        for ([[maybe_unused]]int _ : std::ranges::views::iota(0u, calls)) round_robin_.get_target_thread_id();
+    }
+};
+
 class TaskDestructionTest : public testing::Test
 {
 protected:
