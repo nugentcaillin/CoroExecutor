@@ -10,8 +10,9 @@ namespace CoroExecutor
 
 
 template<typename T>
-concept ScheduleStrategy = requires(T strat)
+concept ScheduleStrategy = requires(T strat, size_t num_threads)
 {
+    T(num_threads);
     {strat.get_target_thread_id()} -> std::same_as<size_t>;
 };
 
