@@ -35,6 +35,10 @@ target_link_libraries(tests
 
 CONFIGURE_TARGET(tests)
 
+target_include_directories(tests
+  PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/CoroExecutor
+)
 
 include(GoogleTest)
 gtest_discover_tests(tests)
